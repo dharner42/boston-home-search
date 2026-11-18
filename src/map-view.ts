@@ -87,7 +87,8 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
   let listingsSettled = false
   let listingFilter: ListingKindFilter = "both"
   let listingClicksBound = false
-  const listingLayerIds = ["listings", "listing-labels"]
+  let listingCollection: ListingFeatureCollection = { type: "FeatureCollection", features: [] }
+  const listingLayerIds = ["listing-clusters", "listing-cluster-count", "listings", "listing-labels"]
 
   const clock = (seconds: number) => {
     if (!view) return
@@ -137,14 +138,17 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
     paintListingVisibility()
   }
 
-  const listingFilterSpec = (): maplibregl.FilterSpecification =>
-    listingFilter === "both" ? ["has", "kind"] : ["==", ["get", "kind"], listingFilter]
+  const filteredListings = (): ListingFeatureCollection => ({
+    type: "FeatureCollection",
+    features:
+      listingFilter === "both"
+        ? listingCollection.features
+        : listingCollection.features.filter((feature) => feature.properties.kind === listingFilter),
+  })
 
-  const applyListingFilter = () => {
-    const filter = listingFilterSpec()
-    for (const id of listingLayerIds) {
-      if (map.getLayer(id)) map.setFilter(id, filter)
-    }
+  const pushListings = () => {
+    const source = map.getSource("listings") as maplibregl.GeoJSONSource | undefined
+    source?.setData(filteredListings())
   }
 
   const finish = () => {
@@ -279,32 +283,73 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
       hideListings()
     },
     setListings: (data) => {
+      listingCollection = data
       listingCount = data.features.length
       const existing = map.getSource("listings") as maplibregl.GeoJSONSource | undefined
       if (existing) {
-        existing.setData(data)
+        pushListings()
         paintListingVisibility()
         return
       }
-      map.addSource("listings", { type: "geojson", data })
+      map.addSource("listings", {
+        type: "geojson",
+        data: filteredListings(),
+        cluster: true,
+        clusterRadius: 52,
+        clusterMaxZoom: 13,
+      })
       map.addLayer({
-        id: "listings",
+        id: "listing-clusters",
         type: "circle",
         source: "listings",
+        filter: ["has", "point_count"],
         layout: { visibility: "none" },
         paint: {
-          "circle-color": ["match", ["get", "kind"], "rent", "#FFC857", "sale", "#7EB6FF", "#ffffff"],
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 8, 14, 13],
+          "circle-color": "#141820",
+          "circle-radius": ["step", ["get", "point_count"], 16, 8, 19, 20, 23],
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#0b0e13",
+          "circle-stroke-color": "#FFC857",
         },
       })
       const font = symbolFont(map)
       if (font) {
         map.addLayer({
+          id: "listing-cluster-count",
+          type: "symbol",
+          source: "listings",
+          filter: ["has", "point_count"],
+          layout: {
+            visibility: "none",
+            "text-field": ["to-string", ["get", "point_count"]],
+            "text-font": font,
+            "text-size": 13,
+            "text-allow-overlap": true,
+          },
+          paint: {
+            "text-color": "#f4efe4",
+          },
+        })
+      }
+      map.addLayer({
+        id: "listings",
+        type: "circle",
+        source: "listings",
+        filter: ["!", ["has", "point_count"]],
+        layout: { visibility: "none" },
+        paint: {
+          "circle-color": ["match", ["get", "kind"], "rent", "#FFC857", "sale", "#7EB6FF", "#ffffff"],
+          "circle-radius": 8,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#0b0e13",
+        },
+      })
+      if (font) {
+        map.addLayer({
           id: "listing-labels",
           type: "symbol",
           source: "listings",
+          filter: ["!", ["has", "point_count"]],
+          minzoom: 14,
           layout: {
             visibility: "none",
             "text-field": [
@@ -315,9 +360,12 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
             ],
             "text-font": font,
             "text-size": 12,
-            "text-offset": [0, 1.2],
+            "text-offset": [0, 1.15],
             "text-anchor": "top",
-            "text-allow-overlap": true,
+            "text-allow-overlap": false,
+            "text-optional": true,
+            "text-padding": 2,
+            "symbol-sort-key": ["get", "driveMin"],
           },
           paint: {
             "text-color": "#f4efe4",
@@ -333,7 +381,19 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
           const id = typeof raw === "string" ? raw : typeof raw === "number" ? String(raw) : ""
           if (id) api.onListingClick?.(id)
         }
-        for (const id of listingLayerIds) {
+        const onCluster = (event: maplibregl.MapLayerMouseEvent) => {
+          if (!listingsSettled) return
+          const feature = event.features?.[0]
+          const clusterId = feature?.properties?.cluster_id
+          if (typeof clusterId !== "number" || feature?.geometry.type !== "Point") return
+          const source = map.getSource("listings") as maplibregl.GeoJSONSource
+          const [lng, lat] = feature.geometry.coordinates
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          void source.getClusterExpansionZoom(clusterId).then((zoom) => {
+            map.easeTo({ center: [lng, lat], zoom, duration: reduced ? 0 : 450 })
+          })
+        }
+        for (const id of ["listings", "listing-labels"]) {
           if (!map.getLayer(id)) continue
           map.on("click", id, onPin)
           map.on("mouseenter", id, () => {
@@ -343,20 +403,29 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
             map.getCanvas().style.cursor = ""
           })
         }
+        for (const id of ["listing-clusters", "listing-cluster-count"]) {
+          if (!map.getLayer(id)) continue
+          map.on("click", id, onCluster)
+          map.on("mouseenter", id, () => {
+            map.getCanvas().style.cursor = "pointer"
+          })
+          map.on("mouseleave", id, () => {
+            map.getCanvas().style.cursor = ""
+          })
+        }
         listingClicksBound = true
       }
-      applyListingFilter()
       paintListingVisibility()
     },
     setListingFilter: (filter) => {
       listingFilter = filter
-      applyListingFilter()
+      pushListings()
     },
     focusListing: (lng, lat) => {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
       map.easeTo({
         center: [lng, lat],
-        zoom: Math.max(map.getZoom(), compact ? 13.2 : 14),
+        zoom: Math.max(map.getZoom(), 14.6),
         padding: { top: compact ? 150 : 80, bottom: compact ? 300 : 80, left: 24, right: 24 },
         duration: reduced ? 0 : 650,
         essential: true,

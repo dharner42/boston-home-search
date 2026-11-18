@@ -39,7 +39,7 @@ Average absolute error against Mapbox on these six trips is about 3 minutes, ver
 
 The search box geocodes with Mapbox. Go computes a new spiderweb. Inside the Boston extract (about 42 km around the school) that is a shortest path on the prebuilt graph plus a handful of Mapbox calls, usually a couple of seconds. Outside it, the server reads OpenFreeMap road tiles for the isochrone and routes those. Results are cached on the CDN for 12 hours and in the browser after the first fetch.
 
-Pins read `public/data/listings.json`. Their drive times are always the Tuesday 8:00 drive from The Kendall School, including after you search a different origin. The label on the map says “from Kendall School” for that reason. Pins stay hidden until the street crawl finishes. The file ships as `[]` and is served with a no-cache header.
+Pins read `public/data/listings.json`. Their drive times are always the Tuesday 8:00 drive from The Kendall School, including after you search a different origin. The label on the map says “from Kendall School” for that reason. Pins stay hidden until the street crawl finishes. Zoomed out, nearby pins collapse into a count; zoom in for each home and its drive time. The file is served with a no-cache header.
 
 ## Regenerate
 

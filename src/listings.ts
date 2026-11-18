@@ -76,6 +76,7 @@ export type ListingFeature = {
   properties: {
     id: string
     kind: ListingKind
+    driveMin: number
     driveLabel: string
     isNew: boolean
   }
@@ -95,6 +96,7 @@ export function listingsToGeoJSON(listings: ListingView[]): ListingFeatureCollec
       properties: {
         id: listing.id,
         kind: listing.kind,
+        driveMin: listing.driveMin,
         driveLabel: formatDrive(listing.driveMin),
         isNew: listing.isNew,
       },
