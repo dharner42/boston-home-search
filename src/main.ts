@@ -206,9 +206,12 @@ function clampMinutes(value: number): number {
 }
 
 async function loadReach(trip: Place & { minutes: number }): Promise<ReachData> {
-  if (nearKendall(trip) && trip.minutes === 15) {
+  // The opening Kendall 15-minute view is the baked file only. Other durations
+  // and other addresses go through /api/reach.
+  if (isDefaultKendall(trip)) {
     const baked = await fetch("/data/reach.bin")
-    if (baked.ok) return decodeReach(await baked.arrayBuffer())
+    if (!baked.ok) throw new Error("The saved Kendall drive didn't load.")
+    return decodeReach(await baked.arrayBuffer())
   }
   const depart = nextTuesdayMorning()
   const url =
@@ -239,6 +242,10 @@ function toView(reach: ReachData, trip: Place & { minutes: number }): ReachView 
     bounds: header.bounds,
     lines: reach.lines,
   }
+}
+
+function isDefaultKendall(trip: { lon: number; lat: number; minutes: number }): boolean {
+  return trip.minutes === KENDALL.minutes && nearKendall(trip)
 }
 
 function nearKendall(trip: { lon: number; lat: number }): boolean {

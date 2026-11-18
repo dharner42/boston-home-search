@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { meters } from "./geo.ts"
@@ -46,14 +46,32 @@ let cached: Graph | null = null
 let cachedPath = ""
 
 export function defaultGraphPath(): string {
-  const candidates = [
-    join(process.cwd(), "server", "graph.bin"),
-    fileURLToPath(new URL("../../server/graph.bin", import.meta.url)),
-  ]
+  const candidates = graphCandidates()
   for (const path of candidates) {
     if (existsSync(path)) return path
   }
-  throw new Error("The Boston road graph is missing")
+  throw new Error(`The Boston road graph is missing (looked in ${candidates.join(", ")})`)
+}
+
+function graphCandidates(): string[] {
+  const roots = [process.cwd(), process.env.LAMBDA_TASK_ROOT, process.env.VERCEL_PROJECT_ROOT].filter(
+    (root): root is string => Boolean(root),
+  )
+  const paths = roots.flatMap((root) => [join(root, "server", "graph.bin"), join(root, "api", "server", "graph.bin")])
+  let here = ""
+  try {
+    here = dirname(fileURLToPath(import.meta.url))
+  } catch {
+    here = ""
+  }
+  if (here) {
+    paths.push(
+      join(here, "server", "graph.bin"),
+      join(here, "..", "server", "graph.bin"),
+      join(here, "..", "..", "server", "graph.bin"),
+    )
+  }
+  return [...new Set(paths)]
 }
 
 export function loadGraph(path = defaultGraphPath()): Graph {
