@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-11-18T16:26:35.644Z",
+  "origin": "Needham Center (Town Hall)",
+  "summary": "Street times are free-flow OpenStreetMap lengths scaled separately for highways, primary roads, secondary roads, and local streets, plus a signal delay at surface intersections. Parameters are fit to Mapbox driving-traffic for a Tuesday 8:00 departure, then bracketed by the traffic isochrone.",
+  "departAt": "2026-11-24T08:00",
+  "model": {
+    "surface": 1.1700000000000002,
+    "secondary": 1.3,
+    "primary": 1.8,
+    "highway": 1.3,
+    "signal": 4
+  },
+  "maeMinutes": 1.4,
+  "lines": 6232,
+  "checks": [
+    {
+      "place": "Wellesley Square",
+      "freeFlowMinutes": 6.7,
+      "mapboxTuesday8amMinutes": 10.9,
+      "thisMapMinutes": 14.6
+    },
+    {
+      "place": "Newton Centre",
+      "freeFlowMinutes": 8.3,
+      "mapboxTuesday8amMinutes": 19.7,
+      "thisMapMinutes": 18.5
+    },
+    {
+      "place": "Dedham Square",
+      "freeFlowMinutes": 6.5,
+      "mapboxTuesday8amMinutes": 10.6,
+      "thisMapMinutes": 14.4
+    },
+    {
+      "place": "Westwood Center",
+      "freeFlowMinutes": 9.1,
+      "mapboxTuesday8amMinutes": 13.8,
+      "thisMapMinutes": 17.8
+    },
+    {
+      "place": "Natick Center",
+      "freeFlowMinutes": 12.1,
+      "mapboxTuesday8amMinutes": 19.5,
+      "thisMapMinutes": 23.1
+    }
+  ]
+}

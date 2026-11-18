@@ -1,6 +1,12 @@
 # Boston Home Search
 
-A phone-friendly map of how far you can drive in a chosen number of minutes. It opens on [The Kendall School](https://www.kendallschool.com/) at 577 Belmont Street, Belmont, flies in, then lets color crawl along every street the way a car would reach it.
+A phone-friendly map of how far you can drive in a chosen number of minutes. It centers on one of three areas, flies in, then lets color crawl along every street the way a car would reach it:
+
+- [The Kendall School](https://www.kendallschool.com/), 577 Belmont Street, Belmont
+- Needham Center (Needham Town Hall, 1471 Highland Avenue)
+- Wellesley Square (Wellesley Town Hall, 525 Washington Street)
+
+On a first visit a picker asks which area to open. The choice is remembered, and the area button next to Filters switches at any time. The areas live in `src/areas.ts`.
 
 Streets are colored in three bands that split the drive you asked for. The default is 15 minutes, so the bands are 0–5, 5–10, and 10–15. Times are **Tuesday morning traffic around 8:00**, not empty-road speed limits.
 
@@ -16,7 +22,9 @@ npm run dev
 
 Open [http://127.0.0.1:4731](http://127.0.0.1:4731). The Kendall 15-minute drive is baked into `public/data/reach.bin`, so the first view does not call Mapbox. Another address or another duration is computed by `/api/reach` and cached.
 
-`?frame=start`, `?frame=mid`, and `?frame=end` hold the opening shot, the middle of the crawl, and the finished map. A shareable link looks like `/?lat=42.37347&lng=-71.11894&min=10&q=Harvard%20Square`. The last search is remembered in localStorage.
+`?frame=start`, `?frame=mid`, and `?frame=end` hold the opening shot, the middle of the crawl, and the finished map (they skip the picker). `?area=needham` opens an area directly, and `?reset=1` forgets the saved area and shows the picker again. A shareable link looks like `/?lat=42.37347&lng=-71.11894&min=10&q=Harvard%20Square&area=kendall`. The last search and area are remembered in localStorage.
+
+Needham and Wellesley have no baked drive yet, so their first view goes through `/api/reach` (a couple of seconds, then cached). Bake them with `node --experimental-strip-types scripts/bake-default.ts needham` (and `wellesley`), which writes `reach-<area>.bin` and `method-<area>.json`. The app picks those files up without a code change.
 
 ## Why the times changed
 
@@ -39,7 +47,7 @@ Average absolute error against Mapbox on these six trips is about 3 minutes, ver
 
 The search box geocodes with Mapbox. Go computes a new spiderweb. Inside the Boston extract (about 42 km around the school) that is a shortest path on the prebuilt graph plus a handful of Mapbox calls, usually a couple of seconds. Outside it, the server reads OpenFreeMap road tiles for the isochrone and routes those. Results are cached on the CDN for 12 hours and in the browser after the first fetch.
 
-Pins read `public/data/listings.json`. Their drive times are always the Tuesday 8:00 drive from The Kendall School, including after you search a different origin. The label on the map says “from Kendall School” for that reason. Pins stay hidden until the street crawl finishes. Zoomed out, nearby pins collapse into a count; zoom in for each home and its drive time. The file is served with a no-cache header.
+Pins read the chosen area's file: `public/data/listings.json` (Kendall), `listings-needham.json`, or `listings-wellesley.json`. Their drive times are always the Tuesday 8:00 drive from that area, including after you search a different origin. The label on the map says “from Kendall School” (or the area's name) for that reason. Pins stay hidden until the street crawl finishes. Zoomed out, nearby pins collapse into a count; zoom in for each home and its drive time. The file is served with a no-cache header.
 
 ## Regenerate
 
@@ -51,7 +59,7 @@ pip install -r scripts/requirements.txt
 python scripts/build_graph.py
 ```
 
-Rebuild listings from one or more Zillow search dumps (`{ results: [...] }`). The script keeps sale single-families at or under $1,500,000 with 4 or more bedrooms, and rentals (single-family, townhouse, or multi-family, including a 4-bedroom unit in a building) at or under $9,000 a month with 4 or more bedrooms. Homes without coordinates are dropped. Each kept home is timed on `server/graph.bin` with the Kendall model in `public/data/method.json`, and anything over 20 minutes is dropped. `firstSeen` is copied from the current listings file before it is replaced. New files are `{ generatedAt, listings }`. An older bare array still loads.
+Rebuild listings from one or more Zillow search dumps (`{ results: [...] }`). One run times every home from all three areas and writes each area's file. A home appears in every area it is within 20 minutes of. `-o` names the Kendall file; the others are written beside it. `--area needham` (repeatable) builds only some areas. The dumps need to cover all three areas, so include Needham/Wellesley searches alongside Belmont. Until an area is baked, its listings use the Kendall-fitted model and the summary says so. The script keeps sale single-families at or under $1,500,000 with 4 or more bedrooms, and rentals (single-family, townhouse, or multi-family, including a 4-bedroom unit in a building) at or under $9,000 a month with 4 or more bedrooms. Homes without coordinates are dropped. Each kept home is timed on `server/graph.bin` with each area's model (`public/data/method.json` for Kendall, `method-<area>.json` for the others), and anything over 20 minutes from an area is left out of that area's file. `firstSeen` is copied from the current listings file before it is replaced. New files are `{ generatedAt, listings }`. An older bare array still loads.
 
 ```bash
 npx tsx scripts/build-listings.ts raw/*.json -o public/data/listings.json

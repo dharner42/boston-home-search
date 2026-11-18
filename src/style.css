@@ -960,3 +960,141 @@ body {
   .listing-card { max-height: calc(100% - 72px); }
   #listing-card-img { height: 96px; }
 }
+
+/* Area button and picker */
+#area-open {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px);
+  color: var(--ink);
+  font: 560 14px/1 var(--sans);
+  cursor: pointer;
+}
+#area-open:focus-visible,
+#area-close:focus-visible,
+.area-list button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.area-pin {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 200, 87, 0.22);
+}
+
+#curtain.is-picking .curtain-card { visibility: hidden; }
+
+.area-picker[hidden] { display: none; }
+.area-picker {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
+}
+.area-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+.area-picker[data-locked="true"] .area-backdrop {
+  background: transparent;
+  cursor: default;
+}
+.area-card {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 22px 20px 18px;
+  border-radius: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px);
+  text-align: center;
+}
+.area-card h2 {
+  margin: 4px 0 0;
+  font-family: var(--serif);
+  font-weight: 560;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variation-settings: "opsz" 48, "SOFT" 30, "wght" 560;
+}
+.area-sub {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.area-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.area-list button {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(244, 239, 228, 0.04);
+  color: var(--ink);
+  font-family: var(--sans);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.area-list button:hover { border-color: rgba(255, 200, 87, 0.6); background: rgba(255, 200, 87, 0.08); }
+.area-list button[aria-current="true"] { border-color: var(--gold); background: rgba(255, 200, 87, 0.1); }
+.area-list strong { font-size: 16px; font-weight: 600; }
+.area-list span { color: var(--muted); font-size: 13px; }
+#area-close {
+  margin-top: 14px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: 560 14px/1 var(--sans);
+  cursor: pointer;
+}
+#area-close[hidden] { display: none; }
+
+@media (max-width: 760px) {
+  .area-card h2 { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .area-list button { transition: none; }
+}
+
+/* On phones the open search panel takes the row; the area and Filters buttons sit under it. */
+@media (max-width: 760px) {
+  .top-tools { flex-wrap: wrap; }
+  .brand[data-collapsed="false"] { flex-basis: 100%; max-width: none; }
+}
