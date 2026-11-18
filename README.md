@@ -39,7 +39,7 @@ Average absolute error against Mapbox on these six trips is about 3 minutes, ver
 
 The search box geocodes with Mapbox. Go computes a new spiderweb. Inside the Boston extract (about 42 km around the school) that is a shortest path on the prebuilt graph plus a handful of Mapbox calls, usually a couple of seconds. Outside it, the server reads OpenFreeMap road tiles for the isochrone and routes those. Results are cached on the CDN for 12 hours and in the browser after the first fetch.
 
-Listings in `public/data/listings.json` are labeled with the same grid and the same origin, out to the drive time plus five minutes.
+Pins read `public/data/listings.json`. Their drive times are always the Tuesday 8:00 drive from The Kendall School, including after you search a different origin. The label on the map says “from Kendall School” for that reason. Pins stay hidden until the street crawl finishes. Zoomed out, nearby pins collapse into a count; zoom in for each home and its drive time. The file is served with a no-cache header.
 
 ## Regenerate
 
@@ -50,6 +50,14 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r scripts/requirements.txt
 python scripts/build_graph.py
 ```
+
+Rebuild listings from one or more Zillow search dumps (`{ results: [...] }`). The script keeps sale single-families at or under $1,500,000 with 4 or more bedrooms, and rentals (single-family, townhouse, or multi-family, including a 4-bedroom unit in a building) at or under $9,000 a month with 4 or more bedrooms. Homes without coordinates are dropped. Each kept home is timed on `server/graph.bin` with the Kendall model in `public/data/method.json`, and anything over 20 minutes is dropped. `firstSeen` is copied from the current listings file before it is replaced.
+
+```bash
+npx tsx scripts/build-listings.ts raw/*.json -o public/data/listings.json
+```
+
+A count of rows in, kept, and dropped by reason is printed to stderr. Redirecting stdout onto `public/data/listings.json` empties that file before `firstSeen` can be read; use `-o` so new-ness survives the next run.
 
 Rebuild the baked Kendall drive, the comparison table, and the listings grid with `VITE_MAPBOX_TOKEN` set:
 

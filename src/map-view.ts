@@ -33,6 +33,8 @@ export type ReachView = {
   lines: ReachLine[]
 }
 
+export type ListingKindFilter = "sale" | "rent" | "both"
+
 export type MapHandle = {
   play: () => void
   skip: () => void
@@ -40,6 +42,10 @@ export type MapHandle = {
   pose: (frame: FrameName) => void
   show: (view: ReachView) => void
   setListings: (data: ListingFeatureCollection) => void
+  setListingFilter: (filter: ListingKindFilter) => void
+  focusListing: (lng: number, lat: number) => void
+  onListingClick: ((id: string) => void) | null
+  onListingsVisible: ((visible: boolean) => void) | null
 }
 
 type Frames = { wide: Camera; close: Camera; k1: Camera; k2: Camera; k3: Camera }
@@ -77,6 +83,12 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
   let token = 0
   let raf = 0
   let gestures: AbortController | null = null
+  let listingCount = 0
+  let listingsSettled = false
+  let listingFilter: ListingKindFilter = "both"
+  let listingClicksBound = false
+  let listingCollection: ListingFeatureCollection = { type: "FeatureCollection", features: [] }
+  const listingLayerIds = ["listing-clusters", "listing-cluster-count", "listings", "listing-labels"]
 
   const clock = (seconds: number) => {
     if (!view) return
@@ -108,11 +120,43 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
     if (on) map.touchZoomRotate.disableRotation()
   }
 
+  const paintListingVisibility = () => {
+    const visible = listingsSettled && listingCount > 0
+    for (const id of listingLayerIds) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none")
+    }
+    api.onListingsVisible?.(visible)
+  }
+
+  const hideListings = () => {
+    listingsSettled = false
+    paintListingVisibility()
+  }
+
+  const revealListings = () => {
+    listingsSettled = true
+    paintListingVisibility()
+  }
+
+  const filteredListings = (): ListingFeatureCollection => ({
+    type: "FeatureCollection",
+    features:
+      listingFilter === "both"
+        ? listingCollection.features
+        : listingCollection.features.filter((feature) => feature.properties.kind === listingFilter),
+  })
+
+  const pushListings = () => {
+    const source = map.getSource("listings") as maplibregl.GeoJSONSource | undefined
+    source?.setData(filteredListings())
+  }
+
   const finish = () => {
     gestures?.abort()
     gestures = null
     if (view && frames) apply(frames.k3, view.minutes * 60, true)
     setInteractive(true)
+    revealListings()
     onUi({ label: "Replay", state: "ready" })
   }
 
@@ -140,6 +184,7 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
     if (!view || !frames) return
     const my = existing ?? ++token
     if (raf) cancelAnimationFrame(raf)
+    hideListings()
     setInteractive(false)
     onUi({ label: "Skip", state: "playing" })
     listen(my)
@@ -182,6 +227,7 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
       if (!frames) return
       const my = ++token
       if (raf) cancelAnimationFrame(raf)
+      hideListings()
       setInteractive(false)
       onUi({ label: "Skip", state: "playing" })
       listen(my)
@@ -205,12 +251,14 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
       if (!view || !frames) return
       if (frame === "start") {
         apply(frames.wide, -1, false)
+        hideListings()
         setInteractive(false)
         onUi({ label: "Skip", state: "posed" })
         return
       }
       if (frame === "mid") {
         apply(spreadCamera(frames, 0.5), view.minutes * 60 * lightFraction(0.5), true)
+        hideListings()
         setInteractive(false)
         onUi({ label: "Skip", state: "posed" })
         return
@@ -232,46 +280,159 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
       map.getCanvas().setAttribute("aria-label", `Streets colored by drive time from ${next.label}`)
       renderLegend(next)
       apply(frames.wide, -1, false)
+      hideListings()
     },
     setListings: (data) => {
+      listingCollection = data
+      listingCount = data.features.length
       const existing = map.getSource("listings") as maplibregl.GeoJSONSource | undefined
       if (existing) {
-        existing.setData(data)
+        pushListings()
+        paintListingVisibility()
         return
       }
-      if (data.features.length === 0) return
-      map.addSource("listings", { type: "geojson", data })
+      map.addSource("listings", {
+        type: "geojson",
+        data: filteredListings(),
+        cluster: true,
+        clusterRadius: 52,
+        clusterMaxZoom: 13,
+      })
+      map.addLayer({
+        id: "listing-clusters",
+        type: "circle",
+        source: "listings",
+        filter: ["has", "point_count"],
+        layout: { visibility: "none" },
+        paint: {
+          "circle-color": "#141820",
+          "circle-radius": ["step", ["get", "point_count"], 16, 8, 19, 20, 23],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#FFC857",
+        },
+      })
+      const font = symbolFont(map)
+      if (font) {
+        map.addLayer({
+          id: "listing-cluster-count",
+          type: "symbol",
+          source: "listings",
+          filter: ["has", "point_count"],
+          layout: {
+            visibility: "none",
+            "text-field": ["to-string", ["get", "point_count"]],
+            "text-font": font,
+            "text-size": 13,
+            "text-allow-overlap": true,
+          },
+          paint: {
+            "text-color": "#f4efe4",
+          },
+        })
+      }
       map.addLayer({
         id: "listings",
         type: "circle",
         source: "listings",
+        filter: ["!", ["has", "point_count"]],
+        layout: { visibility: "none" },
         paint: {
-          "circle-color": ["match", ["get", "type"], "rent", "#FFC857", "sale", "#7EB6FF", "#ffffff"],
-          "circle-radius": 6,
-          "circle-stroke-width": 1.5,
+          "circle-color": ["match", ["get", "kind"], "rent", "#FFC857", "sale", "#7EB6FF", "#ffffff"],
+          "circle-radius": 8,
+          "circle-stroke-width": 2,
           "circle-stroke-color": "#0b0e13",
         },
       })
-      const font = symbolFont(map)
-      if (!font) return
-      map.addLayer({
-        id: "listing-labels",
-        type: "symbol",
-        source: "listings",
-        layout: {
-          "text-field": ["concat", ["get", "driveLabel"], " · ", ["get", "priceLabel"]],
-          "text-font": font,
-          "text-size": 11,
-          "text-offset": [0, 1.15],
-          "text-anchor": "top",
-        },
-        paint: {
-          "text-color": "#f4efe4",
-          "text-halo-color": "#0b0e13",
-          "text-halo-width": 1.2,
-        },
+      if (font) {
+        map.addLayer({
+          id: "listing-labels",
+          type: "symbol",
+          source: "listings",
+          filter: ["!", ["has", "point_count"]],
+          minzoom: 14,
+          layout: {
+            visibility: "none",
+            "text-field": [
+              "case",
+              ["==", ["get", "isNew"], true],
+              ["concat", "NEW · ", ["get", "driveLabel"]],
+              ["get", "driveLabel"],
+            ],
+            "text-font": font,
+            "text-size": 12,
+            "text-offset": [0, 1.15],
+            "text-anchor": "top",
+            "text-allow-overlap": false,
+            "text-optional": true,
+            "text-padding": 2,
+            "symbol-sort-key": ["get", "driveMin"],
+          },
+          paint: {
+            "text-color": "#f4efe4",
+            "text-halo-color": "#0b0e13",
+            "text-halo-width": 1.4,
+          },
+        })
+      }
+      if (!listingClicksBound) {
+        const onPin = (event: maplibregl.MapLayerMouseEvent) => {
+          if (!listingsSettled) return
+          const raw = event.features?.[0]?.properties?.id
+          const id = typeof raw === "string" ? raw : typeof raw === "number" ? String(raw) : ""
+          if (id) api.onListingClick?.(id)
+        }
+        const onCluster = (event: maplibregl.MapLayerMouseEvent) => {
+          if (!listingsSettled) return
+          const feature = event.features?.[0]
+          const clusterId = feature?.properties?.cluster_id
+          if (typeof clusterId !== "number" || feature?.geometry.type !== "Point") return
+          const source = map.getSource("listings") as maplibregl.GeoJSONSource
+          const [lng, lat] = feature.geometry.coordinates
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          void source.getClusterExpansionZoom(clusterId).then((zoom) => {
+            map.easeTo({ center: [lng, lat], zoom, duration: reduced ? 0 : 450 })
+          })
+        }
+        for (const id of ["listings", "listing-labels"]) {
+          if (!map.getLayer(id)) continue
+          map.on("click", id, onPin)
+          map.on("mouseenter", id, () => {
+            map.getCanvas().style.cursor = "pointer"
+          })
+          map.on("mouseleave", id, () => {
+            map.getCanvas().style.cursor = ""
+          })
+        }
+        for (const id of ["listing-clusters", "listing-cluster-count"]) {
+          if (!map.getLayer(id)) continue
+          map.on("click", id, onCluster)
+          map.on("mouseenter", id, () => {
+            map.getCanvas().style.cursor = "pointer"
+          })
+          map.on("mouseleave", id, () => {
+            map.getCanvas().style.cursor = ""
+          })
+        }
+        listingClicksBound = true
+      }
+      paintListingVisibility()
+    },
+    setListingFilter: (filter) => {
+      listingFilter = filter
+      pushListings()
+    },
+    focusListing: (lng, lat) => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      map.easeTo({
+        center: [lng, lat],
+        zoom: Math.max(map.getZoom(), 14.6),
+        padding: { top: compact ? 150 : 80, bottom: compact ? 300 : 80, left: 24, right: 24 },
+        duration: reduced ? 0 : 650,
+        essential: true,
       })
     },
+    onListingClick: null,
+    onListingsVisible: null,
   }
 
   setInteractive(false)

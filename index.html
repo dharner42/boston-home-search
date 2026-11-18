@@ -46,6 +46,38 @@
         <p class="sub" id="sub">Tuesday morning, about 8:00</p>
       </header>
       <section id="legend" class="legend" aria-label="Drive time legend"></section>
+      <div id="listing-tools" class="listing-tools" hidden>
+        <div class="listing-filter" role="group" aria-label="Listing type">
+          <button type="button" data-kind="sale" aria-pressed="false">For sale</button>
+          <button type="button" data-kind="rent" aria-pressed="false">For rent</button>
+          <button type="button" data-kind="both" aria-pressed="true">Both</button>
+        </div>
+        <button type="button" id="listing-list-toggle" aria-expanded="false">List</button>
+        <p class="listing-note">from Kendall School</p>
+      </div>
+      <section id="listing-sheet" class="listing-sheet" hidden aria-label="Listings by drive time">
+        <header>
+          <div>
+            <h2>Listings</h2>
+            <p>from Kendall School</p>
+          </div>
+          <button type="button" id="listing-sheet-close">Close</button>
+        </header>
+        <ul id="listing-rows"></ul>
+      </section>
+      <article id="listing-card" class="listing-card" hidden role="dialog" aria-labelledby="listing-card-price">
+        <button type="button" id="listing-card-close" aria-label="Close listing">Close</button>
+        <img id="listing-card-img" alt="" hidden />
+        <div class="listing-card-body">
+          <p id="listing-card-badge" class="listing-new" hidden>New</p>
+          <h2 id="listing-card-price"></h2>
+          <p id="listing-card-facts"></p>
+          <p id="listing-card-address"></p>
+          <p id="listing-card-drive"></p>
+          <p id="listing-card-broker" hidden></p>
+          <a id="listing-card-link" target="_blank" rel="noopener noreferrer">View listing</a>
+        </div>
+      </article>
       <p id="status" class="status" hidden><span id="status-text"></span></p>
       <button type="button" id="action" class="action" hidden>Skip</button>
       <div id="curtain" role="status">
