@@ -37,7 +37,7 @@ The anchor is OSM way [29580670](https://www.openstreetmap.org/way/29580670), th
 
 Routing is Dijkstra on the driveable graph, cut off at 20 minutes. The search area is a 42 km radius around the school, which is past the farthest point a 65 mph road can reach in that time. The script refuses to write output if the 20-minute network runs into the edge of that area.
 
-Street geometry is bucketed every 5 seconds of drive time so the light can step along the roads, then simplified by about 4 meters for the phone. Details of the last run, including lengths and a few landmark checks, are in `public/data/method.json`.
+Street geometry is bucketed every 5 seconds of drive time, simplified by about 4 meters, then packed into `streets.bin` (uint16 coordinates, about a meter of error, under 1 MB). The page decodes that file and draws it as MapLibre line layers. The opening light-up turns those layers on in drive-time order, so the animation does not rebuild the road geometry every frame. A touch or scroll on the map stops the flyover and leaves you in control. Details of the last run are in `public/data/method.json`.
 
 ### Rush hour later
 
@@ -64,7 +64,8 @@ The first run downloads the Massachusetts OpenStreetMap extract (about 300 MB) i
 
 | File | What it is |
 | --- | --- |
-| `public/data/streets.geojson` | Streets under 15 minutes. This is the file the map loads. |
+| `public/data/streets.bin` | Streets under 15 minutes, packed for the map. This is the file the page loads. |
+| `public/data/streets.geojson` | The same streets as readable GeoJSON. Not fetched on page load. |
 | `public/data/streets-15-20.geojson` | The unlit 15–20 minute streets. Not fetched on page load. |
 | `public/data/travel-grid.json` | About a 90 m grid of drive times out to 20 minutes, for pin labels. |
 | `public/data/meta.json` | School coordinate, band colors, and the camera bounds. |
@@ -131,6 +132,6 @@ The site is static. Vercel (or any host that serves a folder) is enough.
 npm run build
 ```
 
-Publish the `dist/` directory. On Vercel, set the framework to Vite, build command `npm run build`, and output directory `dist`. There are no environment variables and no API key.
+`vercel.json` already sets the framework to Vite, `npm ci`, build command `npm run build`, and output directory `dist`. There are no environment variables and no API key. A clean checkout is `npm ci && npm run build`.
 
-`vercel.json` caches the street files for a day and, once it exists, `listings.json` for five minutes so a thrice-daily refresh can show up without a redeploy.
+`sw.js` and `data/listings.json` are sent with `Cache-Control: no-cache` and `CDN-Cache-Control: no-store`, so Vercel's CDN does not keep a stale worker or a stale listings file. The worker itself still asks the network for listings first.

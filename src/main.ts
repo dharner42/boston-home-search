@@ -3,8 +3,9 @@ import "@fontsource-variable/outfit"
 import "maplibre-gl/dist/maplibre-gl.css"
 import "./style.css"
 
+import { loadStreetMesh } from "./load-streets.ts"
 import { mountMap, type FrameName, type MapHandle } from "./map-view.ts"
-import type { Meta, Streets } from "./types.ts"
+import type { Meta } from "./types.ts"
 
 // Milestone 2 pins: call prepareListingPins() from src/listings.ts and add a
 // circle/symbol layer. Drive times through 20 minutes are already on the
@@ -36,10 +37,17 @@ async function boot() {
   })
 
   try {
-    const [meta, streets] = await Promise.all([loadJson<Meta>("/data/meta.json"), loadJson<Streets>("/data/streets.geojson")])
-    if (!streets.features?.length) throw new Error("The drive-time streets file is empty.")
+    const meta = await loadJson<Meta>("/data/meta.json")
     renderLegend(meta)
-    handle = await mountMap(document.querySelector<HTMLElement>("#map")!, meta, streets, (ui) => {
+    const meshPromise = loadStreetMesh()
+    meshPromise.catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : "The street data didn't load."
+      curtain.classList.add("is-gone")
+      errorPanel.hidden = false
+      errorText.textContent = message
+      app.dataset.state = "error"
+    })
+    handle = await mountMap(document.querySelector<HTMLElement>("#map")!, meta, meshPromise, (ui) => {
       action.hidden = false
       action.textContent = ui.label
       app.dataset.state = ui.state

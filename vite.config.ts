@@ -50,7 +50,16 @@ function serviceWorkerPlugin(): Plugin {
     apply: "build",
     closeBundle() {
       const dist = join(root, "dist")
-      const files = walk(dist).filter((file) => file !== "/sw.js" && !file.endsWith("/listings.json"))
+      const skip = new Set([
+        "/sw.js",
+        "/data/listings.json",
+        "/data/streets.geojson",
+        "/data/streets-15-20.geojson",
+        "/data/streets.bin",
+        "/data/travel-grid.json",
+        "/data/method.json",
+      ])
+      const files = walk(dist).filter((file) => !skip.has(file))
       if (!files.includes("/")) files.unshift("/")
       const hash = createHash("sha256")
       for (const file of files) {

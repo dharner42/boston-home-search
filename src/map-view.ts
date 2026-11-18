@@ -1,5 +1,6 @@
 import maplibregl from "maplibre-gl"
-import type { BBox, Camera, Meta, Streets } from "./types.ts"
+import type { StreetCollection } from "./load-streets.ts"
+import type { BBox, Camera, Meta } from "./types.ts"
 
 const STYLE_URLS = [
   "https://tiles.openfreemap.org/styles/dark",
@@ -12,6 +13,7 @@ const HOLD_CLOSE_MS = 650
 const SPREAD_MS = 7000
 const VISUAL_SECONDS = 900
 const LIGHT_POWER = 1.28
+const REVEAL_STEP = 15
 
 export type FrameName = "start" | "mid" | "end"
 
@@ -38,7 +40,7 @@ type Frames = {
 export async function mountMap(
   container: HTMLElement,
   meta: Meta,
-  streets: Streets,
+  meshPromise: Promise<StreetCollection>,
   onUi: (ui: MapUi) => void,
 ): Promise<MapHandle> {
   const style = await loadStyle()
@@ -70,33 +72,59 @@ export async function mountMap(
     .addTo(map)
 
   await once(map, "load")
-  addRoadLayers(map, meta, streets)
+  addRoadLayers(map, meta)
+  let streetsReady = false
+  let shownThrough = -REVEAL_STEP
+  let litSeconds = -1
+  void meshPromise.then((collection) => {
+    const source = map.getSource("roads") as maplibregl.GeoJSONSource | undefined
+    source?.setData(collection)
+    streetsReady = true
+    shownThrough = -REVEAL_STEP
+    setLight(litSeconds)
+    map.triggerRepaint()
+  })
   const frames = buildFrames(map, meta, compact)
   let latest = frames.wide
-  let shownThrough = Number.NaN
   let token = 0
   let raf = 0
+  let gestures: AbortController | null = null
 
   const setMarker = (on: boolean) => markerEl.classList.toggle("is-on", on)
 
   const setLight = (seconds: number) => {
-    const reveal = seconds < 0 ? -1 : Math.floor(seconds / 5) * 5
-    if (reveal === shownThrough) return
+    litSeconds = seconds
+    const reveal = seconds < 0 ? -REVEAL_STEP : Math.floor(seconds / REVEAL_STEP) * REVEAL_STEP
+    paintLegend(seconds)
+    if (!streetsReady || reveal === shownThrough) return
+    const from = reveal < shownThrough ? 0 : shownThrough + REVEAL_STEP
+    if (reveal < shownThrough) {
+      for (let bucket = 0; bucket < VISUAL_SECONDS; bucket += REVEAL_STEP) {
+        map.setLayoutProperty(`roads-glow-${bucket}`, "visibility", "none")
+        map.setLayoutProperty(`roads-${bucket}`, "visibility", "none")
+      }
+    }
+    for (let bucket = Math.max(0, from); bucket <= reveal && bucket < VISUAL_SECONDS; bucket += REVEAL_STEP) {
+      map.setLayoutProperty(`roads-glow-${bucket}`, "visibility", "visible")
+      map.setLayoutProperty(`roads-${bucket}`, "visibility", "visible")
+    }
     shownThrough = reveal
-    paintRoads(map, reveal)
-    paintLegend(reveal)
   }
 
   const apply = (camera: Camera, seconds: number, markerOn: boolean) => {
+    const moved = !sameCamera(latest, camera) || raf === 0
     latest = camera
-    map.jumpTo({
-      center: [camera.lng, camera.lat],
-      zoom: camera.zoom,
-      pitch: camera.pitch,
-      bearing: camera.bearing,
-    })
+    if (moved) {
+      map.jumpTo({
+        center: [camera.lng, camera.lat],
+        zoom: camera.zoom,
+        pitch: camera.pitch,
+        bearing: camera.bearing,
+      })
+    }
     setLight(seconds)
     setMarker(markerOn)
+    if (!moved) map.triggerRepaint()
   }
 
   const setInteractive = (on: boolean) => {
@@ -117,10 +145,41 @@ export async function mountMap(
     if (on) map.touchZoomRotate.disableRotation()
   }
 
+  const stopGestures = () => {
+    gestures?.abort()
+    gestures = null
+  }
+
   const finish = () => {
+    stopGestures()
     apply(frames.k15, VISUAL_SECONDS, true)
     setInteractive(true)
     onUi({ label: "Replay", state: "ready" })
+  }
+
+  const releaseAtCurrentView = () => {
+    token += 1
+    cancel()
+    stopGestures()
+    setLight(VISUAL_SECONDS)
+    setMarker(true)
+    map.triggerRepaint()
+    setInteractive(true)
+    onUi({ label: "Replay", state: "ready" })
+  }
+
+  const listenForTouch = (my: number) => {
+    stopGestures()
+    gestures = new AbortController()
+    const signal = gestures.signal
+    const stop = (event: Event) => {
+      if (my !== token) return
+      if (event.target instanceof Element && event.target.closest("#action, .brand, .legend")) return
+      releaseAtCurrentView()
+    }
+    const surface = map.getCanvasContainer()
+    surface.addEventListener("pointerdown", stop, { capture: true, signal })
+    surface.addEventListener("wheel", stop, { capture: true, passive: true, signal })
   }
 
   const cancel = () => {
@@ -133,7 +192,8 @@ export async function mountMap(
     cancel()
     setInteractive(false)
     onUi({ label: "Skip", state: "playing" })
-    const started = performance.now()
+    listenForTouch(my)
+    let started = performance.now()
     const step = (now: number) => {
       if (my !== token) return
       const elapsed = now - started
@@ -145,7 +205,8 @@ export async function mountMap(
       } else if (elapsed < flyEnd) {
         const p = smoothstep((elapsed - HOLD_WIDE_MS) / FLY_MS)
         apply(lerpCam(frames.wide, frames.close, p), -1, false)
-      } else if (elapsed < holdEnd) {
+      } else if (elapsed < holdEnd || !streetsReady) {
+        if (!streetsReady && elapsed >= holdEnd) started = now - holdEnd
         apply(frames.close, -1, true)
       } else if (elapsed < total) {
         const p = (elapsed - holdEnd) / SPREAD_MS
@@ -171,6 +232,7 @@ export async function mountMap(
       cancel()
       setInteractive(false)
       onUi({ label: "Skip", state: "playing" })
+      listenForTouch(my)
       const from = latest
       const started = performance.now()
       const step = (now: number) => {
@@ -185,6 +247,7 @@ export async function mountMap(
     pose: (frame) => {
       token += 1
       cancel()
+      stopGestures()
       if (frame === "start") {
         apply(frames.wide, -1, false)
         setInteractive(false)
@@ -288,73 +351,59 @@ function lngLatOf(center: maplibregl.LngLatLike): { lng: number; lat: number } {
   return { lng: center.lon, lat: center.lat }
 }
 
-function addRoadLayers(map: maplibregl.Map, meta: Meta, streets: Streets) {
+function addRoadLayers(map: maplibregl.Map, meta: Meta) {
   map.addSource("roads", {
     type: "geojson",
-    data: streets,
-    tolerance: 0,
+    data: { type: "FeatureCollection", features: [] },
   })
   const before = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id
   const color = bandColor(meta, "color")
   const core = bandColor(meta, "core")
-  map.addLayer(
-    {
-      id: "roads-glow",
-      type: "line",
-      source: "roads",
-      filter: ["<", ["get", "band"], 4],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": color,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 9, 2.2, 12, 5, 14, 9, 16, 16],
-        "line-blur": ["interpolate", ["linear"], ["zoom"], 9, 0.6, 12, 1.6, 15, 3.2],
-        "line-opacity": 0,
-        "line-opacity-transition": { duration: 0, delay: 0 },
+  for (let bucket = 0; bucket < VISUAL_SECONDS; bucket += REVEAL_STEP) {
+    const filter: maplibregl.FilterSpecification = [
+      "all",
+      [">=", ["get", "t"], bucket],
+      ["<", ["get", "t"], bucket + REVEAL_STEP],
+    ]
+    map.addLayer(
+      {
+        id: `roads-glow-${bucket}`,
+        type: "line",
+        source: "roads",
+        filter,
+        layout: { visibility: "none", "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": color,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 9, 3.2, 12, 6.5, 14, 10, 16, 15],
+          "line-opacity": 0.55,
+        },
       },
-    },
-    before,
-  )
-  map.addLayer(
-    {
-      id: "roads-core",
-      type: "line",
-      source: "roads",
-      filter: ["<", ["get", "band"], 4],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": core,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.7, 12, 1.5, 14, 2.6, 16, 4.4],
-        "line-opacity": 0,
-        "line-opacity-transition": { duration: 0, delay: 0 },
+      before,
+    )
+    map.addLayer(
+      {
+        id: `roads-${bucket}`,
+        type: "line",
+        source: "roads",
+        filter,
+        layout: { visibility: "none", "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": core,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 12, 1.6, 14, 2.8, 16, 4.6],
+          "line-opacity": 0.95,
+        },
       },
-    },
-    before,
-  )
+      before,
+    )
+  }
 }
 
-function paintRoads(map: maplibregl.Map, reveal: number) {
-  if (reveal < 0) {
-    map.setPaintProperty("roads-glow", "line-opacity", 0)
-    map.setPaintProperty("roads-core", "line-opacity", 0)
-    return
-  }
-  if (reveal >= VISUAL_SECONDS) {
-    map.setPaintProperty("roads-glow", "line-opacity", 0.72)
-    map.setPaintProperty("roads-core", "line-opacity", 0.95)
-    return
-  }
-  map.setPaintProperty("roads-glow", "line-opacity", [
-    "case",
-    ["<=", ["get", "t"], reveal],
-    0.72,
-    0,
-  ])
-  map.setPaintProperty("roads-core", "line-opacity", [
-    "case",
-    ["<=", ["get", "t"], reveal],
-    0.95,
-    0,
-  ])
+function bandColor(meta: Meta, key: "color" | "core"): maplibregl.ExpressionSpecification | string {
+  const first = meta.bands[0]
+  const second = meta.bands[1]
+  const third = meta.bands[2]
+  if (!first || !second || !third) return "#ffffff"
+  return ["match", ["get", "band"], 1, first[key], 2, second[key], 3, third[key], "#ffffff"] as maplibregl.ExpressionSpecification
 }
 
 function paintLegend(reveal: number) {
@@ -363,23 +412,6 @@ function paintLegend(reveal: number) {
     const minSec = band === 1 ? 0 : band === 2 ? 300 : 600
     item.classList.toggle("is-lit", reveal >= minSec)
   })
-}
-
-function bandColor(meta: Meta, key: "color" | "core"): maplibregl.ExpressionSpecification {
-  const first = meta.bands[0]
-  const second = meta.bands[1]
-  const third = meta.bands[2]
-  return [
-    "match",
-    ["get", "band"],
-    1,
-    first[key],
-    2,
-    second[key],
-    3,
-    third[key],
-    "#ffffff",
-  ]
 }
 
 function buildMarker(meta: Meta): HTMLDivElement {
@@ -446,6 +478,16 @@ function lerp(a: number, b: number, t: number): number {
 function smoothstep(t: number): number {
   const x = Math.min(1, Math.max(0, t))
   return x * x * (3 - 2 * x)
+}
+
+function sameCamera(a: Camera, b: Camera): boolean {
+  return (
+    Math.abs(a.lng - b.lng) < 1e-8 &&
+    Math.abs(a.lat - b.lat) < 1e-8 &&
+    Math.abs(a.zoom - b.zoom) < 1e-4 &&
+    Math.abs(a.pitch - b.pitch) < 0.05 &&
+    Math.abs(a.bearing - b.bearing) < 0.05
+  )
 }
 
 function lerpCam(a: Camera, b: Camera, t: number): Camera {

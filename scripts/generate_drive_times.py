@@ -1193,6 +1193,7 @@ def main() -> None:
     for name in ("streets.geojson", "streets-15-20.geojson", "travel-grid.json"):
         size = (OUT / name).stat().st_size
         log(f"wrote {name}  {size / 1e6:.2f} MB")
+    subprocess.check_call([sys.executable, str(Path(__file__).with_name("pack_streets.py"))])
     log("done")
 
 
