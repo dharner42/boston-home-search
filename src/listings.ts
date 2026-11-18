@@ -29,20 +29,50 @@ export type ListingView = Listing & { isNew: boolean }
 export const LISTINGS_URL = "/data/listings.json"
 const NEW_WINDOW_MS = 24 * 60 * 60 * 1000
 
+export type LoadedListings = { listings: ListingView[]; updatedAt: string | null }
+
 export async function loadListings(url = LISTINGS_URL): Promise<Listing[]> {
-  const res = await fetch(url)
-  if (res.status === 404) return []
-  if (!res.ok) throw new Error(`Could not load listings (${res.status})`)
-  const data: unknown = await res.json()
-  if (!Array.isArray(data)) return []
-  return data.filter(isListing).map(normalizeListing)
+  const loaded = await loadListingViews(url)
+  return loaded.listings
 }
 
-export async function loadListingViews(url = LISTINGS_URL, now = Date.now()): Promise<ListingView[]> {
-  const listings = await loadListings(url)
-  return listings
+export async function loadListingViews(url = LISTINGS_URL, now = Date.now()): Promise<LoadedListings> {
+  const res = await fetch(url)
+  if (res.status === 404) return { listings: [], updatedAt: null }
+  if (!res.ok) throw new Error(`Could not load listings (${res.status})`)
+  const data: unknown = await res.json()
+  const file = unwrapListings(data)
+  const listings = file.rows
+    .filter(isListing)
+    .map(normalizeListing)
     .map((listing) => ({ ...listing, isNew: isNewListing(listing.firstSeen, now) }))
     .sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
+  return { listings, updatedAt: file.generatedAt ?? newestLastSeen(listings) }
+}
+
+function unwrapListings(data: unknown): { rows: unknown[]; generatedAt: string | null } {
+  if (Array.isArray(data)) return { rows: data, generatedAt: null }
+  if (data && typeof data === "object" && Array.isArray((data as { listings?: unknown }).listings)) {
+    const generatedAt = (data as { generatedAt?: unknown }).generatedAt
+    return {
+      rows: (data as { listings: unknown[] }).listings,
+      generatedAt: typeof generatedAt === "string" && Number.isFinite(Date.parse(generatedAt)) ? generatedAt : null,
+    }
+  }
+  return { rows: [], generatedAt: null }
+}
+
+function newestLastSeen(listings: Listing[]): string | null {
+  let best = ""
+  let bestTime = Number.NEGATIVE_INFINITY
+  for (const listing of listings) {
+    const time = Date.parse(listing.lastSeen)
+    if (Number.isFinite(time) && time >= bestTime) {
+      bestTime = time
+      best = listing.lastSeen
+    }
+  }
+  return best || null
 }
 
 export function isNewListing(firstSeen: string, now = Date.now()): boolean {

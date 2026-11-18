@@ -3,6 +3,7 @@ import "@fontsource-variable/outfit"
 import "maplibre-gl/dist/maplibre-gl.css"
 import "./style.css"
 
+import { criteriaLines, originPhrase } from "./criteria.ts"
 import { mountListingUi } from "./listing-ui.ts"
 import { listingsToGeoJSON, loadListingViews } from "./listings.ts"
 import { mountMap, type FrameName, type MapHandle, type ReachView } from "./map-view.ts"
@@ -12,6 +13,8 @@ import { geocodePlace, suggestPlaces, type Place } from "./search.ts"
 
 const KENDALL = { lon: -71.1764, lat: 42.37981, label: "Kendall School", minutes: 15 }
 const STORAGE_KEY = "bhs-trip"
+const SEARCH_COLLAPSE_KEY = "bhs-search-collapsed"
+const LEGEND_COLLAPSE_KEY = "bhs-legend-collapsed"
 
 const app = must(document.querySelector<HTMLElement>("#app"), "app")
 const curtain = must(document.querySelector<HTMLElement>("#curtain"), "curtain")
@@ -27,11 +30,25 @@ const suggestions = must(document.querySelector<HTMLElement>("#suggestions"), "s
 const status = must(document.querySelector<HTMLElement>("#status"), "status")
 const statusText = must(document.querySelector<HTMLElement>("#status-text"), "status text")
 const go = must(document.querySelector<HTMLButtonElement>("#go"), "go")
+const searchPanel = must(document.querySelector<HTMLElement>("#search-panel"), "search")
+const searchToggle = must(document.querySelector<HTMLButtonElement>("#search-toggle"), "search toggle")
+const searchHint = must(document.querySelector<HTMLElement>("#search-toggle-hint"), "search hint")
+const searchName = must(document.querySelector<HTMLElement>("#search-pill-name"), "search name")
+const legendPanel = must(document.querySelector<HTMLElement>("#legend"), "legend")
+const legendToggle = must(document.querySelector<HTMLButtonElement>("#legend-toggle"), "legend toggle")
+const legendHint = must(document.querySelector<HTMLElement>("#legend-toggle-hint"), "legend hint")
+const filtersOpen = must(document.querySelector<HTMLButtonElement>("#filters-open"), "filters")
+const criteria = must(document.querySelector<HTMLElement>("#criteria"), "criteria")
+const criteriaList = must(document.querySelector<HTMLElement>("#criteria-list"), "criteria list")
+const criteriaClose = must(document.querySelector<HTMLButtonElement>("#criteria-close"), "criteria close")
 
 retry.addEventListener("click", () => window.location.reload())
 
 const listingUi = mountListingUi({
-  onFilter: (filter) => handle?.setListingFilter(filter),
+  onFilter: (filter) => {
+    handle?.setListingFilter(filter)
+    refreshCriteria()
+  },
   onFocus: (listing) => handle?.focusListing(listing.lng, listing.lat),
 })
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -40,10 +57,13 @@ let selected: Place | null = null
 let handle: MapHandle | null = null
 let suggestTimer = 0
 let suggestAbort: AbortController | null = null
+let updatedAt: string | null = null
+let panelsSettled = false
 
 void boot()
 registerServiceWorker()
 wireForm()
+wirePanels()
 
 async function boot() {
   const trip = readTrip()
@@ -59,6 +79,7 @@ async function boot() {
       action.hidden = false
       action.textContent = ui.label
       app.dataset.state = ui.state
+      if (ui.state === "ready" || (ui.state === "posed" && ui.label === "Replay")) settlePanels()
     })
     handle.onListingClick = (id) => listingUi.open(id)
     handle.onListingsVisible = (visible) => listingUi.setVisible(visible)
@@ -94,9 +115,11 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean) {
     const reach = await loadReach(trip)
     const view = toView(reach, trip)
     handle?.show(view)
-    const listings = await loadListingViews().catch(() => [])
-    listingUi.setListings(listings)
-    handle?.setListings(listingsToGeoJSON(listings))
+    const loaded = await loadListingViews().catch(() => ({ listings: [], updatedAt: null }))
+    updatedAt = loaded.updatedAt
+    listingUi.setListings(loaded.listings)
+    handle?.setListings(listingsToGeoJSON(loaded.listings))
+    refreshCriteria()
     window.clearInterval(timer)
     setStatus("", first)
     if (first) await fadeCurtain()
@@ -115,6 +138,93 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean) {
       return
     }
     throw error
+  }
+}
+
+function wirePanels() {
+  applyCollapsed(searchPanel, searchToggle, searchHint, "Hide search", "Show search", readCollapsed(SEARCH_COLLAPSE_KEY))
+  applyCollapsed(legendPanel, legendToggle, legendHint, "Hide drive time colors", "Show drive time colors", readCollapsed(LEGEND_COLLAPSE_KEY))
+  syncSearchName()
+  searchToggle.addEventListener("click", () => {
+    const next = searchPanel.dataset.collapsed !== "true"
+    applyCollapsed(searchPanel, searchToggle, searchHint, "Hide search", "Show search", next)
+    localStorage.setItem(SEARCH_COLLAPSE_KEY, next ? "1" : "0")
+  })
+  legendToggle.addEventListener("click", () => {
+    const next = legendPanel.dataset.collapsed !== "true"
+    applyCollapsed(legendPanel, legendToggle, legendHint, "Hide drive time colors", "Show drive time colors", next)
+    localStorage.setItem(LEGEND_COLLAPSE_KEY, next ? "1" : "0")
+  })
+  filtersOpen.addEventListener("click", () => openCriteria())
+  criteriaClose.addEventListener("click", () => closeCriteria())
+  document.querySelector("#criteria-backdrop")?.addEventListener("click", () => closeCriteria())
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !criteria.hidden) closeCriteria()
+  })
+}
+
+function settlePanels() {
+  if (panelsSettled) return
+  panelsSettled = true
+  if (!window.matchMedia("(max-width: 760px)").matches) return
+  if (localStorage.getItem(SEARCH_COLLAPSE_KEY) == null) {
+    applyCollapsed(searchPanel, searchToggle, searchHint, "Hide search", "Show search", true)
+    localStorage.setItem(SEARCH_COLLAPSE_KEY, "1")
+  }
+  if (localStorage.getItem(LEGEND_COLLAPSE_KEY) == null) {
+    applyCollapsed(legendPanel, legendToggle, legendHint, "Hide drive time colors", "Show drive time colors", true)
+    localStorage.setItem(LEGEND_COLLAPSE_KEY, "1")
+  }
+}
+
+function readCollapsed(key: string): boolean {
+  return localStorage.getItem(key) === "1"
+}
+
+function applyCollapsed(
+  panel: HTMLElement,
+  toggle: HTMLButtonElement,
+  hint: HTMLElement,
+  hideLabel: string,
+  showLabel: string,
+  collapsed: boolean,
+) {
+  panel.dataset.collapsed = collapsed ? "true" : "false"
+  toggle.setAttribute("aria-expanded", collapsed ? "false" : "true")
+  hint.textContent = collapsed ? showLabel : hideLabel
+  app.dataset.legend = legendPanel.dataset.collapsed === "true" ? "closed" : "open"
+}
+
+function syncSearchName() {
+  const label = placeInput.value.trim() || KENDALL.label
+  searchName.textContent = label.length > 28 ? `${label.slice(0, 27)}…` : label
+}
+
+function openCriteria() {
+  refreshCriteria()
+  criteria.hidden = false
+  filtersOpen.setAttribute("aria-expanded", "true")
+  criteriaClose.focus()
+}
+
+function closeCriteria() {
+  criteria.hidden = true
+  filtersOpen.setAttribute("aria-expanded", "false")
+  filtersOpen.focus()
+}
+
+function refreshCriteria() {
+  const lines = criteriaLines({
+    origin: originPhrase(placeInput.value || KENDALL.label),
+    streetMinutes: clampMinutes(Number(minutesInput.value)),
+    filter: listingUi.getFilter(),
+    updatedAt,
+  })
+  criteriaList.replaceChildren()
+  for (const line of lines) {
+    const item = document.createElement("li")
+    item.textContent = line
+    criteriaList.append(item)
   }
 }
 
@@ -301,6 +411,7 @@ function applyTrip(trip: Trip) {
   selected = { label: trip.label, lon: trip.lon, lat: trip.lat }
   placeInput.value = trip.label
   minutesInput.value = String(trip.minutes)
+  syncSearchName()
 }
 
 function remember(trip: Trip) {
