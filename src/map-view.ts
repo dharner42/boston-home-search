@@ -31,7 +31,13 @@ export type ReachView = {
   bands: ReachBand[]
   bounds: { b1: BBox; b2: BBox; b3: BBox }
   lines: ReachLine[]
+  /** Every center drawn on the map. One for a single drive, several when areas are shown together. */
+  origins: ReachOrigin[]
+  /** Legend heading. Defaults to "From <label>". */
+  kicker?: string
 }
+
+export type ReachOrigin = { lon: number; lat: number; label: string }
 
 export type ListingKindFilter = "sale" | "rent" | "both"
 
@@ -71,8 +77,18 @@ export async function mountMap(
     validateStyle: false,
   })
   map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right")
-  const markerEl = buildMarker(shortName(start.label ?? "Start"), "")
-  const marker = new maplibregl.Marker({ element: markerEl, anchor: "center" }).setLngLat([start.lon, start.lat]).addTo(map)
+  const markers: Array<{ el: HTMLDivElement; marker: maplibregl.Marker }> = []
+  const addMarker = (label: string, lon: number, lat: number) => {
+    const el = buildMarker(shortName(label), "")
+    const marker = new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([lon, lat]).addTo(map)
+    markers.push({ el, marker })
+  }
+  addMarker(start.label ?? "Start", start.lon, start.lat)
+  let markersOn = false
+  const showMarkers = (on: boolean) => {
+    markersOn = on
+    for (const item of markers) item.el.classList.toggle("is-on", on)
+  }
   await Promise.race([
     once(map, "load"),
     wait(25000).then(() => Promise.reject(new Error("The basemap took too long"))),
@@ -110,7 +126,7 @@ export async function mountMap(
       map.jumpTo({ center: [camera.lng, camera.lat], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing })
     }
     clock(seconds)
-    markerEl.classList.toggle("is-on", markerOn)
+    showMarkers(markerOn)
   }
 
   const setInteractive = (on: boolean) => {
@@ -175,7 +191,7 @@ export async function mountMap(
       raf = 0
       gestures?.abort()
       if (view) clock(view.minutes * 60)
-      markerEl.classList.add("is-on")
+      showMarkers(true)
       setInteractive(true)
       onUi({ label: "Replay", state: "ready" })
     }
@@ -275,12 +291,28 @@ export async function mountMap(
       fuse.setLines(next.lines)
       frames = buildFrames(map, next, compact)
       latest = frames.wide
-      marker.setLngLat([next.lon, next.lat])
-      const title = markerEl.querySelector<HTMLElement>(".school-card strong")
-      const detail = markerEl.querySelector<HTMLElement>(".school-card span")
-      if (title) title.textContent = shortName(next.label)
-      if (detail) detail.textContent = next.detail
-      markerEl.setAttribute("aria-label", next.label)
+      const origins = next.origins.length > 0 ? next.origins : [{ lon: next.lon, lat: next.lat, label: next.label }]
+      while (markers.length < origins.length) {
+        const origin = origins[markers.length]!
+        addMarker(origin.label, origin.lon, origin.lat)
+      }
+      while (markers.length > origins.length) markers.pop()?.marker.remove()
+      const group = origins.length > 1
+      const westmost = Math.min(...origins.map((origin) => origin.lon))
+      origins.forEach((origin, index) => {
+        const item = markers[index]
+        if (!item) return
+        item.marker.setLngLat([origin.lon, origin.lat])
+        const title = item.el.querySelector<HTMLElement>(".school-card strong")
+        const detail = item.el.querySelector<HTMLElement>(".school-card span")
+        if (title) title.textContent = shortName(origin.label)
+        if (detail) detail.textContent = group ? "" : next.detail
+        item.el.classList.toggle("is-group", group)
+        // Centers can sit a few kilometres apart; the westmost card opens left so neighbours do not cover it.
+        item.el.classList.toggle("is-left", group && origin.lon === westmost)
+        item.el.classList.toggle("is-on", markersOn)
+        item.el.setAttribute("aria-label", origin.label)
+      })
       map.getCanvas().setAttribute("aria-label", `Streets colored by drive time from ${next.label}`)
       renderLegend(next)
       apply(frames.wide, -1, false)
@@ -472,13 +504,16 @@ function buildFrames(map: maplibregl.Map, view: ReachView, compact: boolean): Fr
     : compact
       ? { top: 128, bottom: 150, left: 16, right: 16 }
       : { top: 120, bottom: 150, left: 28, right: 32 }
-  const close: Camera = {
-    lng: view.lon,
-    lat: view.lat,
-    zoom: compact ? 14.2 : 15,
-    pitch: compact ? 16 : 32,
-    bearing: -12,
-  }
+  const close: Camera =
+    view.origins.length > 1
+      ? groupClose(map, view.origins, padding, compact)
+      : {
+          lng: view.lon,
+          lat: view.lat,
+          zoom: compact ? 14.2 : 15,
+          pitch: compact ? 16 : 32,
+          bearing: -12,
+        }
   const k1 = fitBounds(map, view.bounds.b1, padding, close)
   const k2 = fitBounds(map, view.bounds.b2, padding, k1)
   const k3 = fitBounds(map, view.bounds.b3, padding, k2)
@@ -493,6 +528,18 @@ function buildFrames(map: maplibregl.Map, view: ReachView, compact: boolean): Fr
   k3.pitch = 0
   k3.bearing = 0
   return { wide, close, k1, k2, k3 }
+}
+
+/** Opening close-up for several centers: all of them in frame, tilted a little. */
+function groupClose(map: maplibregl.Map, origins: ReachOrigin[], padding: maplibregl.PaddingOptions, compact: boolean): Camera {
+  const lons = origins.map((origin) => origin.lon)
+  const lats = origins.map((origin) => origin.lat)
+  const pad = 0.01
+  const box: BBox = [Math.min(...lons) - pad, Math.min(...lats) - pad, Math.max(...lons) + pad, Math.max(...lats) + pad]
+  const center = { lng: (box[0] + box[2]) / 2, lat: (box[1] + box[3]) / 2 }
+  const fallback: Camera = { ...center, zoom: 11.5, pitch: 0, bearing: 0 }
+  const camera = fitBounds(map, box, padding, fallback)
+  return { ...camera, zoom: Math.min(camera.zoom, 13), pitch: compact ? 8 : 18, bearing: -8 }
 }
 
 function fitBounds(map: maplibregl.Map, bounds: BBox, padding: maplibregl.PaddingOptions, fallback: Camera): Camera {
@@ -520,7 +567,7 @@ function renderLegend(view: ReachView) {
   legend.replaceChildren()
   const kicker = document.createElement("p")
   kicker.className = "legend-kicker"
-  kicker.textContent = `From ${shortName(view.label)}`
+  kicker.textContent = view.kicker ?? `From ${shortName(view.label)}`
   const list = document.createElement("ul")
   const dots = document.querySelectorAll<HTMLElement>("#legend-toggle .legend-dots i")
   view.bands.forEach((band, index) => {

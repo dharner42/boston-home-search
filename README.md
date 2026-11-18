@@ -6,7 +6,7 @@ A phone-friendly map of how far you can drive in a chosen number of minutes. It 
 - Needham Center (Needham Town Hall, 1471 Highland Avenue)
 - Wellesley Square (Wellesley Town Hall, 525 Washington Street)
 
-On a first visit a picker asks which area to open. The choice is remembered, and the area button next to Filters switches at any time. The areas live in `src/areas.ts`.
+On a first visit a picker asks which area to open: tap one, or tick any two or all three under "Or view them together". Together, every center's drive is drawn on one map with a pin per center, and listings from all the chosen areas are merged, each home showing its drive from the closest center. The choice is remembered, and the area button next to Filters switches at any time. The areas live in `src/areas.ts`.
 
 Streets are colored in three bands that split the drive you asked for. The default is 15 minutes, so the bands are 0–5, 5–10, and 10–15. Times are **Tuesday morning traffic around 8:00**, not empty-road speed limits.
 
@@ -22,7 +22,7 @@ npm run dev
 
 Open [http://127.0.0.1:4731](http://127.0.0.1:4731). The Kendall 15-minute drive is baked into `public/data/reach.bin`, so the first view does not call Mapbox. Another address or another duration is computed by `/api/reach` and cached.
 
-`?frame=start`, `?frame=mid`, and `?frame=end` hold the opening shot, the middle of the crawl, and the finished map (they skip the picker). `?area=needham` opens an area directly, and `?reset=1` forgets the saved area and shows the picker again. A shareable link looks like `/?lat=42.37347&lng=-71.11894&min=10&q=Harvard%20Square&area=kendall`. The last search and area are remembered in localStorage.
+`?frame=start`, `?frame=mid`, and `?frame=end` hold the opening shot, the middle of the crawl, and the finished map (they skip the picker). `?area=needham` opens an area directly (`?area=kendall,wellesley` opens several together), and `?reset=1` forgets the saved area and shows the picker again. A shareable link looks like `/?lat=42.37347&lng=-71.11894&min=10&q=Harvard%20Square&area=kendall`. The last search and area are remembered in localStorage.
 
 Needham and Wellesley have no baked drive yet, so their first view goes through `/api/reach` (a couple of seconds, then cached). Bake them with `node --experimental-strip-types scripts/bake-default.ts needham` (and `wellesley`), which writes `reach-<area>.bin` and `method-<area>.json`. The app picks those files up without a code change.
 

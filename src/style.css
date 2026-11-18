@@ -1086,11 +1086,89 @@ body {
 }
 #area-close[hidden] { display: none; }
 
+.area-together {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.area-together-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.area-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.area-chip {
+  min-height: 44px;
+  padding: 0 14px 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: 560 14px/1 var(--sans);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+.area-chip::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.5px solid currentColor;
+  box-sizing: border-box;
+}
+.area-chip[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: rgba(255, 200, 87, 0.1);
+  color: var(--ink);
+}
+.area-chip[aria-pressed="true"]::before {
+  border-color: var(--gold);
+  background: var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.2l2.6 2.6L11 4.4' fill='none' stroke='%230b0e13' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+#area-together {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: #0b0e13;
+  font: 600 15px/1 var(--sans);
+  cursor: pointer;
+}
+#area-together[aria-current="true"] { box-shadow: 0 0 0 3px rgba(255, 200, 87, 0.3); }
+#area-together:disabled {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+.area-chip:focus-visible,
+#area-together:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+/* Several centers on the map: name only, and the westmost card opens to the left. */
+.school-marker.is-group .school-card span { display: none; }
+.school-marker.is-left .school-card { left: auto; right: 24px; }
+
 @media (max-width: 760px) {
   .area-card h2 { font-size: 26px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .area-list button { transition: none; }
+  .area-list button, .area-chip { transition: none; }
 }
 
 /* On phones the open search panel takes the row; the area and Filters buttons sit under it. */

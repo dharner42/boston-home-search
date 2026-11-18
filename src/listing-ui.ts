@@ -33,6 +33,7 @@ export function mountListingUi(options: {
   let openId: string | null = null
   let originName = "Kendall School"
   let photoToken = 0
+  let mixedOrigins = false
   photo.addEventListener("error", () => {
     if (photo.dataset.token === String(photoToken)) photo.hidden = true
   })
@@ -72,6 +73,7 @@ export function mountListingUi(options: {
   return {
     setListings(next) {
       listings = next
+      mixedOrigins = new Set(next.map((listing) => listing.origin)).size > 1
       if (openId && !next.some((listing) => listing.id === openId)) closeCard()
       renderRows()
       applyVisibility()
@@ -125,8 +127,9 @@ export function mountListingUi(options: {
       button.type = "button"
       button.className = "listing-row"
       button.dataset.kind = listing.kind
+      const from = mixedOrigins && listing.originShort ? ` from ${listing.originShort}` : ""
       button.append(
-        line("listing-row-top", `${formatPrice(listing)} · ${formatDrive(listing.driveMin)}`),
+        line("listing-row-top", `${formatPrice(listing)} · ${formatDrive(listing.driveMin)}${from}`),
         line("listing-row-facts", formatFacts(listing)),
         line("listing-row-address", listing.address || "Address unavailable"),
       )
@@ -149,7 +152,7 @@ export function mountListingUi(options: {
     price.textContent = formatPrice(listing)
     facts.textContent = `${listing.kind === "rent" ? "For rent" : "For sale"} · ${formatFacts(listing)}`
     address.textContent = listing.address || "Address unavailable"
-    drive.textContent = `${formatDrive(listing.driveMin)} from ${originName}`
+    drive.textContent = `${formatDrive(listing.driveMin)} from ${listing.origin ?? originName}`
     broker.textContent = listing.broker
     broker.hidden = listing.broker.length === 0
     badge.hidden = !listing.isNew
