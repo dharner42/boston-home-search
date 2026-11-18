@@ -51,7 +51,7 @@ pip install -r scripts/requirements.txt
 python scripts/build_graph.py
 ```
 
-Rebuild listings from one or more Zillow search dumps (`{ results: [...] }`). The script keeps sale single-families at or under $1,500,000 with 4 or more bedrooms, and rentals (single-family, townhouse, or multi-family, including a 4-bedroom unit in a building) at or under $9,000 a month with 4 or more bedrooms. Homes without coordinates are dropped. Each kept home is timed on `server/graph.bin` with the Kendall model in `public/data/method.json`, and anything over 20 minutes is dropped. `firstSeen` is copied from the current listings file before it is replaced.
+Rebuild listings from one or more Zillow search dumps (`{ results: [...] }`). The script keeps sale single-families at or under $1,500,000 with 4 or more bedrooms, and rentals (single-family, townhouse, or multi-family, including a 4-bedroom unit in a building) at or under $9,000 a month with 4 or more bedrooms. Homes without coordinates are dropped. Each kept home is timed on `server/graph.bin` with the Kendall model in `public/data/method.json`, and anything over 20 minutes is dropped. `firstSeen` is copied from the current listings file before it is replaced. New files are `{ generatedAt, listings }`. An older bare array still loads.
 
 ```bash
 npx tsx scripts/build-listings.ts raw/*.json -o public/data/listings.json

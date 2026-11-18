@@ -511,14 +511,15 @@ function lngLatOf(center: maplibregl.LngLatLike): { lng: number; lat: number } {
 }
 
 function renderLegend(view: ReachView) {
-  const legend = document.querySelector("#legend")
+  const legend = document.querySelector("#legend-body")
   if (!legend) return
   legend.replaceChildren()
   const kicker = document.createElement("p")
   kicker.className = "legend-kicker"
   kicker.textContent = `From ${shortName(view.label)}`
   const list = document.createElement("ul")
-  for (const band of view.bands) {
+  const dots = document.querySelectorAll<HTMLElement>("#legend-toggle .legend-dots i")
+  view.bands.forEach((band, index) => {
     const item = document.createElement("li")
     item.dataset.min = String(band.minSec)
     const swatch = document.createElement("i")
@@ -528,7 +529,9 @@ function renderLegend(view: ReachView) {
     label.textContent = band.label
     item.append(swatch, label)
     list.append(item)
-  }
+    const dot = dots[index]
+    if (dot) dot.style.background = band.color
+  })
   const note = document.createElement("p")
   note.className = "legend-note"
   note.textContent = view.note

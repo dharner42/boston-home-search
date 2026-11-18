@@ -13,16 +13,12 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 
+import { LISTING_DRIVE_MAX_MIN, MIN_BEDS, RENT_MAX, RENT_TYPES, SALE_MAX, SALE_TYPES } from "../src/criteria.ts"
 import { loadGraph, nearestNode, routeTimes, snapToRoad } from "../src/reach/graph.ts"
 import type { Model } from "../src/reach/model.ts"
 
-const SALE_MAX = 1_500_000
-const RENT_MAX = 9_000
-const MIN_BEDS = 4
-const DRIVE_LIMIT_MIN = 20
 const SEARCH_LIMIT_MIN = 45
 const NODE_LIMIT_M = 400
-const RENT_TYPES = new Set(["SINGLE_FAMILY", "TOWNHOUSE", "MULTI_FAMILY"])
 
 const DROP_REASONS = [
   "invalid",
@@ -122,7 +118,7 @@ function main() {
         continue
       }
       const minutes = seconds / 60
-      if (minutes > DRIVE_LIMIT_MIN) {
+      if (minutes > LISTING_DRIVE_MAX_MIN) {
         counts.drive += 1
         continue
       }
@@ -137,7 +133,7 @@ function main() {
   }
 
   kept.sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
-  const json = `${JSON.stringify(kept, null, 2)}\n`
+  const json = `${JSON.stringify({ generatedAt: now, listings: kept }, null, 2)}\n`
   if (args.stdout) process.stdout.write(json)
   else writeFileSync(args.out, json)
 
@@ -160,7 +156,7 @@ function evaluate(result: RawResult): Omit<ListingRecord, "driveMin" | "firstSee
   const kind = kindOf(result)
   if (!kind) return "price"
   const type = text(result.type).toUpperCase()
-  const allowed = kind === "sale" ? type === "SINGLE_FAMILY" : RENT_TYPES.has(type)
+  const allowed = kind === "sale" ? (SALE_TYPES as readonly string[]).includes(type) : (RENT_TYPES as readonly string[]).includes(type)
   if (!allowed) return "type"
   const offer = chooseOffer(result, kind)
   if (!offer) return missReason(result, kind)
@@ -289,8 +285,13 @@ function readPrevious(path: string): Map<string, string> {
     console.error(`ignored unreadable previous listings at ${path}`)
     return seen
   }
-  if (!Array.isArray(parsed)) return seen
-  for (const row of parsed) {
+  const rows = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === "object" && Array.isArray((parsed as { listings?: unknown }).listings)
+      ? (parsed as { listings: unknown[] }).listings
+      : null
+  if (!rows) return seen
+  for (const row of rows) {
     if (!row || typeof row !== "object") continue
     const id = (row as { id?: unknown }).id
     const firstSeen = (row as { firstSeen?: unknown }).firstSeen

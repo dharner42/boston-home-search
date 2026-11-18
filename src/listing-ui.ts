@@ -6,6 +6,7 @@ export type ListingUi = {
   setListings: (listings: ListingView[]) => void
   setVisible: (visible: boolean) => void
   open: (id: string) => void
+  getFilter: () => ListingFilter
 }
 
 /**
@@ -80,6 +81,7 @@ export function mountListingUi(options: {
       if (!listing || !matches(listing)) return
       openCard(listing)
     },
+    getFilter: () => filter,
   }
 
   function applyVisibility() {

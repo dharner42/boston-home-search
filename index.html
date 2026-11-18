@@ -22,30 +22,58 @@
   <body>
     <div id="app" data-state="loading">
       <div id="map" role="region" aria-label="Map"></div>
-      <header class="brand">
-        <h1 class="eyebrow">Boston Home Search</h1>
-        <form id="trip" autocomplete="off">
-          <label class="place">
-            <span class="sr">Starting address</span>
-            <input id="place" name="place" placeholder="Starting address" enterkeyhint="search" maxlength="120" />
-          </label>
-          <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
-          <div class="trip-row">
-            <div class="stepper">
-              <button type="button" id="min-down" aria-label="Fewer minutes">−</button>
-              <label class="minutes">
-                <span class="sr">Drive time in minutes</span>
-                <input id="minutes" name="minutes" inputmode="numeric" min="5" max="30" step="1" value="15" />
-                <span>min</span>
+      <div class="top-tools">
+        <header class="brand" id="search-panel" data-collapsed="false">
+          <button type="button" id="search-toggle" aria-expanded="true" aria-controls="search-body">
+            <span class="search-glass" aria-hidden="true"></span>
+            <span class="chevron" aria-hidden="true"></span>
+            <span id="search-pill-name">Kendall School</span>
+            <span class="sr" id="search-toggle-hint">Hide search</span>
+          </button>
+          <div id="search-body">
+            <h1 class="eyebrow">Boston Home Search</h1>
+            <form id="trip" autocomplete="off">
+              <label class="place">
+                <span class="sr">Starting address</span>
+                <input id="place" name="place" placeholder="Starting address" enterkeyhint="search" maxlength="120" />
               </label>
-              <button type="button" id="min-up" aria-label="More minutes">+</button>
-            </div>
-            <button type="submit" id="go">Go</button>
+              <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+              <div class="trip-row">
+                <div class="stepper">
+                  <button type="button" id="min-down" aria-label="Fewer minutes">−</button>
+                  <label class="minutes">
+                    <span class="sr">Drive time in minutes</span>
+                    <input id="minutes" name="minutes" inputmode="numeric" min="5" max="30" step="1" value="15" />
+                    <span>min</span>
+                  </label>
+                  <button type="button" id="min-up" aria-label="More minutes">+</button>
+                </div>
+                <button type="submit" id="go">Go</button>
+              </div>
+            </form>
+            <p class="sub" id="sub">Tuesday morning, about 8:00</p>
           </div>
-        </form>
-        <p class="sub" id="sub">Tuesday morning, about 8:00</p>
-      </header>
-      <section id="legend" class="legend" aria-label="Drive time legend"></section>
+        </header>
+        <button type="button" id="filters-open" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+      </div>
+      <section id="legend" class="legend" data-collapsed="false" aria-label="Drive time legend">
+        <button type="button" id="legend-toggle" aria-expanded="true" aria-controls="legend-body">
+          <span class="legend-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="chevron" aria-hidden="true"></span>
+          <span class="sr" id="legend-toggle-hint">Hide drive time colors</span>
+        </button>
+        <div id="legend-body"></div>
+      </section>
+      <div id="criteria" class="criteria" hidden>
+        <button type="button" class="criteria-backdrop" id="criteria-backdrop" aria-label="Close filters"></button>
+        <section class="criteria-card" role="dialog" aria-modal="true" aria-labelledby="criteria-title">
+          <header>
+            <h2 id="criteria-title">Filters</h2>
+            <button type="button" id="criteria-close">Close</button>
+          </header>
+          <ul id="criteria-list"></ul>
+        </section>
+      </div>
       <div id="listing-tools" class="listing-tools" hidden>
         <div class="listing-filter" role="group" aria-label="Listing type">
           <button type="button" data-kind="sale" aria-pressed="false">For sale</button>
