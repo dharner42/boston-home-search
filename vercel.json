@@ -16,14 +16,14 @@
       ]
     },
     {
-      "source": "/data/listings.json",
+      "source": "/data/listings(.*).json",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, must-revalidate" },
         { "key": "CDN-Cache-Control", "value": "no-store" }
       ]
     },
     {
-      "source": "/data/(reach.bin|streets.bin|streets.geojson|streets-15-20.geojson|travel-grid.json|meta.json|method.json|comparison.json)",
+      "source": "/data/(reach.bin|reach-needham.bin|reach-wellesley.bin|streets.bin|streets.geojson|streets-15-20.geojson|travel-grid.json|meta.json|method.json|method-needham.json|method-wellesley.json|comparison.json)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
     }
   ],

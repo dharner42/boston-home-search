@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url)
   if (url.origin === self.location.origin) {
     if (url.pathname === "/sw.js") return
-    if (url.pathname === "/data/listings.json") {
+    if (/^\/data\/listings(-[a-z]+)?\.json$/.test(url.pathname)) {
       event.respondWith(listingsFirst(request))
       return
     }

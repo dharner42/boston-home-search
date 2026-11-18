@@ -1,12 +1,13 @@
 /** Thresholds shared by the listings build and the on-map criteria sheet. */
 
+import { AREAS, DEFAULT_AREA } from "./areas.ts"
+
 export const SALE_MAX = 1_500_000
 export const RENT_MAX = 9_000
 export const MIN_BEDS = 4
 export const LISTING_DRIVE_MAX_MIN = 20
 export const SALE_TYPES = ["SINGLE_FAMILY"] as const
 export const RENT_TYPES = ["SINGLE_FAMILY", "TOWNHOUSE", "MULTI_FAMILY"] as const
-export const DEFAULT_ORIGIN = "The Kendall School, Belmont"
 
 export type ListingFilterName = "sale" | "rent" | "both"
 
@@ -18,6 +19,8 @@ export function streetBandCuts(duration: number): [number, number, number] {
 
 export function criteriaLines(input: {
   origin: string
+  /** Where listing drive times are measured from (the chosen area). */
+  listingOrigin: string
   streetMinutes: number
   filter: ListingFilterName
   updatedAt: string | null
@@ -31,7 +34,7 @@ export function criteriaLines(input: {
         : "Right now the list shows for sale and for rent."
   return [
     `Drive times are measured from ${input.origin} and use weekday morning rush-hour traffic (Tuesday at 8:00 AM).`,
-    `The street colors show ${first}/${second}/${outer}-minute bands, and listings are shown out to a ${LISTING_DRIVE_MAX_MIN}-minute drive.`,
+    `The street colors show ${first}/${second}/${outer}-minute bands, and listings are shown out to a ${LISTING_DRIVE_MAX_MIN}-minute drive from ${input.listingOrigin}.`,
     `For sale: ${saleCap()} or less, ${MIN_BEDS}+ bedrooms, single-family only.`,
     `For rent: ${rentCap()} or less, ${MIN_BEDS}+ bedrooms, single-family, townhouse, or multi-family unit.`,
     "Source: Zillow, refreshed around 6 AM, 1 PM, and 7 PM ET.",
@@ -43,8 +46,10 @@ export function criteriaLines(input: {
 
 export function originPhrase(label: string): string {
   const trimmed = label.trim()
-  if (trimmed === "Kendall School" || trimmed.startsWith("The Kendall School")) return DEFAULT_ORIGIN
-  return trimmed || DEFAULT_ORIGIN
+  const area = AREAS.find((item) => trimmed === item.name || trimmed.startsWith(item.origin))
+  if (area) return area.origin
+  if (trimmed.startsWith("The Kendall School")) return DEFAULT_AREA.origin
+  return trimmed || DEFAULT_AREA.origin
 }
 
 function saleCap(): string {

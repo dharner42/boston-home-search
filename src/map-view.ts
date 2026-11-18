@@ -50,12 +50,16 @@ export type MapHandle = {
 
 type Frames = { wide: Camera; close: Camera; k1: Camera; k2: Camera; k3: Camera }
 
-export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void): Promise<MapHandle> {
+export async function mountMap(
+  container: HTMLElement,
+  start: { lon: number; lat: number; label?: string },
+  onUi: (ui: MapUi) => void,
+): Promise<MapHandle> {
   const compact = window.matchMedia("(max-width: 760px), (max-height: 520px)").matches
   const map = new maplibregl.Map({
     container,
     style: await loadStyle(),
-    center: [-71.1764, 42.3798],
+    center: [start.lon, start.lat],
     zoom: compact ? 9.2 : 9.6,
     minZoom: 3,
     maxZoom: 18,
@@ -67,8 +71,8 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
     validateStyle: false,
   })
   map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right")
-  const markerEl = buildMarker("Kendall School", "577 Belmont Street")
-  const marker = new maplibregl.Marker({ element: markerEl, anchor: "center" }).setLngLat([-71.1764, 42.3798]).addTo(map)
+  const markerEl = buildMarker(shortName(start.label ?? "Start"), "")
+  const marker = new maplibregl.Marker({ element: markerEl, anchor: "center" }).setLngLat([start.lon, start.lat]).addTo(map)
   await Promise.race([
     once(map, "load"),
     wait(25000).then(() => Promise.reject(new Error("The basemap took too long"))),
@@ -79,7 +83,7 @@ export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void
 
   let view: ReachView | null = null
   let frames: Frames | null = null
-  let latest: Camera = { lng: -71.1, lat: 42.37, zoom: 9.4, pitch: 0, bearing: 0 }
+  let latest: Camera = { lng: start.lon, lat: start.lat, zoom: 9.4, pitch: 0, bearing: 0 }
   let token = 0
   let raf = 0
   let gestures: AbortController | null = null

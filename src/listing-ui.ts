@@ -7,11 +7,14 @@ export type ListingUi = {
   setVisible: (visible: boolean) => void
   open: (id: string) => void
   getFilter: () => ListingFilter
+  /** Name of the place listing drive times are measured from. */
+  setOrigin: (name: string) => void
 }
 
 /**
  * Filter, list, and detail card for the pin layer.
- * Drive times shown here are the Kendall School times stored on each listing.
+ * Drive times shown here are the times stored on each listing, measured from
+ * the chosen area (see src/areas.ts), not from the map's current origin.
  */
 export function mountListingUi(options: {
   onFilter: (filter: ListingFilter) => void
@@ -28,6 +31,7 @@ export function mountListingUi(options: {
   let filter: ListingFilter = "both"
   let visible = false
   let openId: string | null = null
+  let originName = "Kendall School"
   let photoToken = 0
   photo.addEventListener("error", () => {
     if (photo.dataset.token === String(photoToken)) photo.hidden = true
@@ -82,6 +86,12 @@ export function mountListingUi(options: {
       openCard(listing)
     },
     getFilter: () => filter,
+    setOrigin(name) {
+      originName = name
+      for (const note of document.querySelectorAll<HTMLElement>("[data-listing-origin]")) {
+        note.textContent = `from ${name}`
+      }
+    },
   }
 
   function applyVisibility() {
@@ -139,7 +149,7 @@ export function mountListingUi(options: {
     price.textContent = formatPrice(listing)
     facts.textContent = `${listing.kind === "rent" ? "For rent" : "For sale"} · ${formatFacts(listing)}`
     address.textContent = listing.address || "Address unavailable"
-    drive.textContent = `${formatDrive(listing.driveMin)} from Kendall School`
+    drive.textContent = `${formatDrive(listing.driveMin)} from ${originName}`
     broker.textContent = listing.broker
     broker.hidden = listing.broker.length === 0
     badge.hidden = !listing.isNew

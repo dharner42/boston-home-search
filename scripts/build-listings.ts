@@ -1,18 +1,23 @@
 /**
- * Turn Zillow search dumps into public/data/listings.json.
+ * Turn Zillow search dumps into one listings file per area (src/areas.ts).
  *
  *   npx tsx scripts/build-listings.ts raw/*.json -o public/data/listings.json
  *
  * Each input file is `{ total, pages, filterState, results: [...] }` or a bare array.
- * JSON is written to -o (default public/data/listings.json). A summary goes to stderr.
- * firstSeen is copied from the existing output file, which is read before it is replaced.
+ * Every home is timed from every area and kept in each area's file when it is within
+ * LISTING_DRIVE_MAX_MIN of that area. -o names the Kendall file (default
+ * public/data/listings.json); the other areas are written beside it as
+ * listings-needham.json and listings-wellesley.json. Pass --area <id> (repeatable)
+ * to build only some areas. A summary goes to stderr.
+ * firstSeen is copied from each existing output file, which is read before it is replaced.
  * Do not shell-redirect stdout onto that same file: the shell empties it first.
- * Pass --stdout to write the JSON to stdout instead, and --previous to name the file
- * that holds firstSeen.
+ * Pass --stdout to write one area's JSON to stdout instead (Kendall unless --area
+ * names another), and --previous to name the file that holds its firstSeen.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
-import { resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 
+import { AREAS, DEFAULT_AREA, areaById, type Area } from "../src/areas.ts"
 import { LISTING_DRIVE_MAX_MIN, MIN_BEDS, RENT_MAX, RENT_TYPES, SALE_MAX, SALE_TYPES } from "../src/criteria.ts"
 import { loadGraph, nearestNode, routeTimes, snapToRoad } from "../src/reach/graph.ts"
 import type { Model } from "../src/reach/model.ts"
@@ -78,31 +83,52 @@ export type ListingRecord = {
 type Args = {
   files: string[]
   out: string
-  previous: string
+  previous: string | null
   stdout: boolean
+  areas: Area[]
+}
+
+type AreaRun = {
+  area: Area
+  out: string
+  previous: Map<string, string>
+  times: Float64Array | number[]
+  kept: ListingRecord[]
+  drive: number
+  unroutable: number
+  modelNote: string
 }
 
 function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.files.length === 0) usage(1)
   const now = new Date().toISOString()
-  const previous = readPrevious(args.previous)
-  const school = readSchool()
-  const model = readModel()
   const graph = loadGraph()
-  const snap = snapToRoad(graph, school.lon, school.lat, 200)
-  if (!snap) throw new Error("Could not snap The Kendall School onto the road graph")
-  const times = routeTimes(graph, snap, model, SEARCH_LIMIT_MIN * 60)
+  const runs: AreaRun[] = args.areas.map((area) => {
+    const out = area.id === DEFAULT_AREA.id ? args.out : join(dirname(args.out), area.listingsFile)
+    const snap = snapToRoad(graph, area.lon, area.lat, 200)
+    if (!snap) throw new Error(`Could not snap ${area.name} onto the road graph`)
+    const { model, note } = readModel(area)
+    return {
+      area,
+      out,
+      previous: readPrevious(args.stdout && args.previous ? args.previous : out),
+      times: routeTimes(graph, snap, model, SEARCH_LIMIT_MIN * 60),
+      kept: [],
+      drive: 0,
+      unroutable: 0,
+      modelNote: note,
+    }
+  })
   const counts = Object.fromEntries(DROP_REASONS.map((reason) => [reason, 0])) as Record<DropReason, number>
   let input = 0
-  const kept: ListingRecord[] = []
-  const keptIds = new Set<string>()
+  const seenIds = new Set<string>()
 
-    for (const file of args.files) {
+  for (const file of args.files) {
     for (const result of readResults(file)) {
       input += 1
       const earlyId = idOf(result)
-      if (earlyId && keptIds.has(earlyId)) {
+      if (earlyId && seenIds.has(earlyId)) {
         counts.duplicate += 1
         continue
       }
@@ -111,39 +137,54 @@ function main() {
         counts[outcome] += 1
         continue
       }
+      seenIds.add(outcome.id)
       const node = nearestNode(graph, outcome.lng, outcome.lat, NODE_LIMIT_M)
-      const seconds = node == null ? Number.POSITIVE_INFINITY : (times[node] ?? Number.POSITIVE_INFINITY)
-      if (node == null || !Number.isFinite(seconds)) {
-        counts.unroutable += 1
-        continue
+      let keptAnywhere = false
+      let routable = false
+      for (const run of runs) {
+        const seconds = node == null ? Number.POSITIVE_INFINITY : (run.times[node] ?? Number.POSITIVE_INFINITY)
+        if (!Number.isFinite(seconds)) {
+          run.unroutable += 1
+          continue
+        }
+        routable = true
+        const minutes = seconds / 60
+        if (minutes > LISTING_DRIVE_MAX_MIN) {
+          run.drive += 1
+          continue
+        }
+        keptAnywhere = true
+        run.kept.push({
+          ...outcome,
+          driveMin: Math.round(minutes * 10) / 10,
+          firstSeen: run.previous.get(outcome.id) ?? now,
+          lastSeen: now,
+        })
       }
-      const minutes = seconds / 60
-      if (minutes > LISTING_DRIVE_MAX_MIN) {
-        counts.drive += 1
-        continue
-      }
-      keptIds.add(outcome.id)
-      kept.push({
-        ...outcome,
-        driveMin: Math.round(minutes * 10) / 10,
-        firstSeen: previous.get(outcome.id) ?? now,
-        lastSeen: now,
-      })
+      if (!routable) counts.unroutable += 1
+      else if (!keptAnywhere) counts.drive += 1
     }
   }
 
-  kept.sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
-  const json = `${JSON.stringify({ generatedAt: now, listings: kept }, null, 2)}\n`
-  if (args.stdout) process.stdout.write(json)
-  else writeFileSync(args.out, json)
-
-  const lines = [`in ${input}`, `kept ${kept.length}`]
-  for (const reason of DROP_REASONS) lines.push(`dropped ${reason} ${counts[reason]}`)
+  const lines = [`in ${input}`]
+  for (const reason of DROP_REASONS) {
+    const scope = reason === "drive" || reason === "unroutable" ? " (kept by no area)" : ""
+    lines.push(`dropped ${reason} ${counts[reason]}${scope}`)
+  }
+  for (const run of runs) {
+    run.kept.sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
+    const json = `${JSON.stringify({ generatedAt: now, listings: run.kept }, null, 2)}\n`
+    if (args.stdout) process.stdout.write(json)
+    else writeFileSync(run.out, json)
+    lines.push(
+      `${run.area.id}: kept ${run.kept.length}, over ${LISTING_DRIVE_MAX_MIN} min ${run.drive}, unroutable ${run.unroutable}` +
+        (args.stdout ? "" : `, wrote ${run.out}`) +
+        (run.modelNote ? ` (${run.modelNote})` : ""),
+    )
+  }
   if (args.stdout) {
-    lines.push(`firstSeen read from ${args.previous}`)
+    lines.push(`firstSeen read from ${args.previous ?? runs[0]?.out}`)
     lines.push("stdout was not written over that file; a shell redirect onto it would clear firstSeen first")
-  } else {
-    lines.push(`wrote ${args.out}`)
   }
   console.error(lines.join("\n"))
 }
@@ -302,42 +343,39 @@ function readPrevious(path: string): Map<string, string> {
   return seen
 }
 
-function readSchool(): { lat: number; lon: number } {
-  const parsed = JSON.parse(readFileSync(resolve("public/data/meta.json"), "utf8")) as {
-    school?: { lat?: unknown; lon?: unknown }
-  }
-  const lat = parsed.school?.lat
-  const lon = parsed.school?.lon
-  if (typeof lat !== "number" || typeof lon !== "number") {
-    throw new Error("public/data/meta.json is missing the school coordinate")
-  }
-  return { lat, lon }
-}
-
-function readModel(): Model {
-  const parsed = JSON.parse(readFileSync(resolve("public/data/method.json"), "utf8")) as { model?: Partial<Model> }
+/**
+ * The fitted model for an area, from its method file. Until an area has been
+ * baked (scripts/bake-default.ts <id>), the Kendall model stands in.
+ */
+function readModel(area: Area): { model: Model; note: string } {
+  const own = resolve("public/data", area.methodFile)
+  const path = existsSync(own) ? own : resolve("public/data", DEFAULT_AREA.methodFile)
+  const parsed = JSON.parse(readFileSync(path, "utf8")) as { model?: Partial<Model> }
   const model = parsed.model ?? {}
   return {
-    surface: modelNumber(model, "surface"),
-    secondary: modelNumber(model, "secondary"),
-    primary: modelNumber(model, "primary"),
-    highway: modelNumber(model, "highway"),
-    signal: modelNumber(model, "signal"),
+    model: {
+      surface: modelNumber(model, "surface"),
+      secondary: modelNumber(model, "secondary"),
+      primary: modelNumber(model, "primary"),
+      highway: modelNumber(model, "highway"),
+      signal: modelNumber(model, "signal"),
+    },
+    note: path === own ? "" : `no ${area.methodFile} yet, used the Kendall model`,
   }
 }
 
 function modelNumber(model: Partial<Model>, key: keyof Model): number {
   const value = model[key]
-  if (typeof value !== "number") throw new Error(`public/data/method.json is missing model.${key}`)
+  if (typeof value !== "number") throw new Error(`method file is missing model.${key}`)
   return value
 }
 
 function parseArgs(argv: string[]): Args {
   const files: string[] = []
   let out = resolve("public/data/listings.json")
-  let previous = out
-  let previousSet = false
+  let previous: string | null = null
   let stdout = false
+  const areas: Area[] = []
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] ?? ""
     if (arg === "--stdout") {
@@ -348,14 +386,21 @@ function parseArgs(argv: string[]): Args {
       const next = argv[++i]
       if (!next) usage(1)
       out = resolve(next)
-      if (!previousSet) previous = out
       continue
     }
     if (arg === "--previous") {
       const next = argv[++i]
       if (!next) usage(1)
       previous = resolve(next)
-      previousSet = true
+      continue
+    }
+    if (arg === "--area") {
+      const area = areaById(argv[++i])
+      if (!area) {
+        console.error(`--area must be one of ${AREAS.map((item) => item.id).join(", ")}`)
+        usage(1)
+      }
+      if (!areas.includes(area)) areas.push(area)
       continue
     }
     if (arg === "--help" || arg === "-h") usage(0)
@@ -365,13 +410,19 @@ function parseArgs(argv: string[]): Args {
     }
     files.push(arg)
   }
-  return { files, out, previous, stdout }
+  if (stdout && areas.length > 1) {
+    console.error("--stdout writes one area; pass a single --area")
+    usage(1)
+  }
+  const chosen = areas.length > 0 ? areas : stdout ? [DEFAULT_AREA] : [...AREAS]
+  return { files, out, previous, stdout, areas: chosen }
 }
 
 function usage(code: number): never {
   console.error(
     "usage: npx tsx scripts/build-listings.ts raw/*.json -o public/data/listings.json\n" +
-      "       npx tsx scripts/build-listings.ts [--stdout] [--previous public/data/listings.json] raw/*.json",
+      "       npx tsx scripts/build-listings.ts [--area kendall|needham|wellesley]... raw/*.json\n" +
+      "       npx tsx scripts/build-listings.ts --stdout [--area <id>] [--previous public/data/listings.json] raw/*.json",
   )
   process.exit(code)
 }

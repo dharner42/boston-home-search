@@ -3,6 +3,7 @@ import "@fontsource-variable/outfit"
 import "maplibre-gl/dist/maplibre-gl.css"
 import "./style.css"
 
+import { AREAS, DEFAULT_AREA, DEFAULT_MINUTES, areaAt, areaById, type Area } from "./areas.ts"
 import { criteriaLines, originPhrase } from "./criteria.ts"
 import { mountListingUi } from "./listing-ui.ts"
 import { listingsToGeoJSON, loadListingViews } from "./listings.ts"
@@ -11,8 +12,8 @@ import { decodeReach, type ReachData } from "./reach/codec.ts"
 import { nextTuesdayMorning } from "./reach/tuesday.ts"
 import { geocodePlace, suggestPlaces, type Place } from "./search.ts"
 
-const KENDALL = { lon: -71.1764, lat: 42.37981, label: "Kendall School", minutes: 15 }
 const STORAGE_KEY = "bhs-trip"
+const AREA_KEY = "bhs-area"
 const SEARCH_COLLAPSE_KEY = "bhs-search-collapsed"
 const LEGEND_COLLAPSE_KEY = "bhs-legend-collapsed"
 
@@ -41,6 +42,11 @@ const filtersOpen = must(document.querySelector<HTMLButtonElement>("#filters-ope
 const criteria = must(document.querySelector<HTMLElement>("#criteria"), "criteria")
 const criteriaList = must(document.querySelector<HTMLElement>("#criteria-list"), "criteria list")
 const criteriaClose = must(document.querySelector<HTMLButtonElement>("#criteria-close"), "criteria close")
+const areaOpen = must(document.querySelector<HTMLButtonElement>("#area-open"), "area button")
+const areaOpenName = must(document.querySelector<HTMLElement>("#area-open-name"), "area button name")
+const areaPicker = must(document.querySelector<HTMLElement>("#area-picker"), "area picker")
+const areaList = must(document.querySelector<HTMLElement>("#area-list"), "area list")
+const areaClose = must(document.querySelector<HTMLButtonElement>("#area-close"), "area close")
 
 retry.addEventListener("click", () => window.location.reload())
 
@@ -59,15 +65,22 @@ let suggestTimer = 0
 let suggestAbort: AbortController | null = null
 let updatedAt: string | null = null
 let panelsSettled = false
+let area: Area = DEFAULT_AREA
+let pickResolve: ((picked: Area | null) => void) | null = null
+let pickLocked = false
 
+wireAreas()
 void boot()
 registerServiceWorker()
 wireForm()
 wirePanels()
 
 async function boot() {
-  const trip = readTrip()
-  applyTrip(trip)
+  const start = readStart()
+  applyArea(start.area)
+  applyTrip(start.trip)
+  // On a first visit the picker opens while the basemap loads behind the curtain.
+  const picking = start.needsPick ? pickArea(true) : null
   action.addEventListener("click", () => {
     if (!handle) return
     if (action.textContent === "Skip") handle.skip()
@@ -75,7 +88,7 @@ async function boot() {
   })
   try {
     setStatus("Opening the map…", true)
-    handle = await mountMap(must(document.querySelector<HTMLElement>("#map"), "map"), (ui) => {
+    handle = await mountMap(must(document.querySelector<HTMLElement>("#map"), "map"), start.trip, (ui) => {
       action.hidden = false
       action.textContent = ui.label
       app.dataset.state = ui.state
@@ -83,13 +96,20 @@ async function boot() {
     })
     handle.onListingClick = (id) => listingUi.open(id)
     handle.onListingsVisible = (visible) => listingUi.setVisible(visible)
+    let trip = start.trip
+    if (picking) {
+      applyArea((await picking) ?? area)
+      trip = centerTrip(area, DEFAULT_MINUTES)
+      applyTrip(trip)
+    }
     try {
       await runTrip(trip, true)
     } catch (error) {
-      if (trip.minutes === KENDALL.minutes && nearKendall(trip)) throw error
+      if (homeView(trip)) throw error
       localStorage.removeItem(STORAGE_KEY)
-      applyTrip({ ...KENDALL })
-      await runTrip({ ...KENDALL }, true)
+      const center = centerTrip(area, DEFAULT_MINUTES)
+      applyTrip(center)
+      await runTrip(center, true)
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : ""
@@ -99,11 +119,17 @@ async function boot() {
       return
     }
     sessionStorage.removeItem("bhs-basemap-retry")
+    closeAreaPicker(null, true)
     fail(error)
   }
 }
 
-async function runTrip(trip: Place & { minutes: number }, first: boolean) {
+/**
+ * Load and play a drive. Listings come from `target` (the area), which only
+ * becomes the current area once the drive has loaded, so a failed switch
+ * leaves the map, pins and labels on the previous area.
+ */
+async function runTrip(trip: Place & { minutes: number }, first: boolean, target: Area = area): Promise<boolean> {
   const messages = ["Reading Tuesday morning traffic…", "Tracing the streets…", "Timing the drive…"]
   let tick = 0
   setStatus(messages[0] ?? "", first)
@@ -115,7 +141,8 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean) {
     const reach = await loadReach(trip)
     const view = toView(reach, trip)
     handle?.show(view)
-    const loaded = await loadListingViews().catch(() => ({ listings: [], updatedAt: null }))
+    if (target !== area) applyArea(target)
+    const loaded = await loadListingViews(`/data/${target.listingsFile}`).catch(() => ({ listings: [], updatedAt: null }))
     updatedAt = loaded.updatedAt
     listingUi.setListings(loaded.listings)
     handle?.setListings(listingsToGeoJSON(loaded.listings))
@@ -129,13 +156,14 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean) {
     else if (reducedMotion) handle?.pose("end")
     else if (first) handle?.play()
     else handle?.replay()
+    return true
   } catch (error) {
     window.clearInterval(timer)
     setStatus("", first)
     if (!first) {
       status.hidden = false
       statusText.textContent = error instanceof Error ? error.message : "The drive could not be timed"
-      return
+      return false
     }
     throw error
   }
@@ -196,7 +224,7 @@ function applyCollapsed(
 }
 
 function syncSearchName() {
-  const label = placeInput.value.trim() || KENDALL.label
+  const label = placeInput.value.trim() || area.name
   searchName.textContent = label.length > 28 ? `${label.slice(0, 27)}…` : label
 }
 
@@ -215,7 +243,8 @@ function closeCriteria() {
 
 function refreshCriteria() {
   const lines = criteriaLines({
-    origin: originPhrase(placeInput.value || KENDALL.label),
+    origin: originPhrase(placeInput.value || area.name),
+    listingOrigin: area.origin,
     streetMinutes: clampMinutes(Number(minutesInput.value)),
     filter: listingUi.getFilter(),
     updatedAt,
@@ -324,12 +353,13 @@ function clampMinutes(value: number): number {
 }
 
 async function loadReach(trip: Place & { minutes: number }): Promise<ReachData> {
-  // The opening Kendall 15-minute view is the baked file only. Other durations
-  // and other addresses go through /api/reach.
-  if (isDefaultKendall(trip)) {
-    const baked = await fetch("/data/reach.bin")
-    if (!baked.ok) throw new Error("The saved Kendall drive didn't load.")
-    return decodeReach(await baked.arrayBuffer())
+  // An area's own 15-minute view reads its baked file. An area that has not
+  // been baked yet (404) falls through to /api/reach like any other address.
+  const home = homeView(trip)
+  if (home) {
+    const saved = await fetch(`/data/${home.reachFile}`).catch(() => null)
+    if (saved?.ok) return decodeReach(await saved.arrayBuffer())
+    if (home.id === DEFAULT_AREA.id) throw new Error(`The saved ${home.name} drive didn't load.`)
   }
   const depart = nextTuesdayMorning()
   const url =
@@ -362,39 +392,57 @@ function toView(reach: ReachData, trip: Place & { minutes: number }): ReachView 
   }
 }
 
-function isDefaultKendall(trip: { lon: number; lat: number; minutes: number }): boolean {
-  return trip.minutes === KENDALL.minutes && nearKendall(trip)
-}
-
-function nearKendall(trip: { lon: number; lat: number }): boolean {
-  const cos = Math.cos((KENDALL.lat * Math.PI) / 180)
-  const dx = (trip.lon - KENDALL.lon) * 111_320 * cos
-  const dy = (trip.lat - KENDALL.lat) * 111_320
-  return Math.hypot(dx, dy) < 80
+/** The area whose own default view this trip is (its center at 15 minutes). */
+function homeView(trip: { lon: number; lat: number; minutes: number }): Area | null {
+  return trip.minutes === DEFAULT_MINUTES ? areaAt(trip.lon, trip.lat) : null
 }
 
 type Trip = Place & { minutes: number }
 
-function readTrip(): Trip {
+type Start = { trip: Trip; area: Area; needsPick: boolean }
+
+/**
+ * What to open on. A shared link or a remembered area opens straight away.
+ * A first visit, or ?reset=1, opens the area picker.
+ */
+function readStart(): Start {
   const params = new URLSearchParams(window.location.search)
   if (params.get("reset") === "1") {
     localStorage.removeItem(STORAGE_KEY)
-    params.delete("reset")
+    localStorage.removeItem(AREA_KEY)
     const url = new URL(window.location.href)
     url.searchParams.delete("reset")
     history.replaceState(null, "", url)
   }
+  const savedArea = areaById(localStorage.getItem(AREA_KEY))
+  const urlArea = areaById(params.get("area"))
   const fromUrl = tripFromParams(params)
-  if (fromUrl) return fromUrl
+  if (fromUrl) {
+    const chosen = urlArea ?? areaAt(fromUrl.lon, fromUrl.lat) ?? savedArea ?? DEFAULT_AREA
+    return { trip: fromUrl, area: chosen, needsPick: false }
+  }
+  if (urlArea) return { trip: centerTrip(urlArea, DEFAULT_MINUTES), area: urlArea, needsPick: false }
+  if (savedArea) {
+    return { trip: readSavedTrip() ?? centerTrip(savedArea, DEFAULT_MINUTES), area: savedArea, needsPick: false }
+  }
+  // Screenshot frames (?frame=) skip the picker and use the default area.
+  return { trip: centerTrip(DEFAULT_AREA, DEFAULT_MINUTES), area: DEFAULT_AREA, needsPick: frame == null }
+}
+
+function readSavedTrip(): Trip | null {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "") as Partial<Trip>
     if (typeof saved.lon === "number" && typeof saved.lat === "number" && typeof saved.label === "string") {
       return { lon: saved.lon, lat: saved.lat, label: saved.label, minutes: clampMinutes(Number(saved.minutes)) }
     }
   } catch {
-    // Ignore a broken saved trip and use the school.
+    // Ignore a broken saved trip and use the area center.
   }
-  return { ...KENDALL }
+  return null
+}
+
+function centerTrip(target: Area, minutes: number): Trip {
+  return { lon: target.lon, lat: target.lat, label: target.name, minutes }
 }
 
 function tripFromParams(params: URLSearchParams): Trip | null {
@@ -416,6 +464,7 @@ function applyTrip(trip: Trip) {
 
 function remember(trip: Trip) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(trip))
+  localStorage.setItem(AREA_KEY, area.id)
 }
 
 function writeUrl(trip: Trip) {
@@ -424,7 +473,86 @@ function writeUrl(trip: Trip) {
   url.searchParams.set("lng", trip.lon.toFixed(5))
   url.searchParams.set("min", String(trip.minutes))
   url.searchParams.set("q", trip.label)
+  url.searchParams.set("area", area.id)
   history.replaceState(null, "", url)
+}
+
+function applyArea(next: Area) {
+  area = next
+  areaOpenName.textContent = next.name.split(" ")[0] ?? next.name
+  areaOpen.setAttribute("aria-label", `Area: ${next.name}. Change area`)
+  listingUi.setOrigin(next.name)
+  syncSearchName()
+}
+
+function wireAreas() {
+  for (const item of AREAS) {
+    const row = document.createElement("li")
+    const button = document.createElement("button")
+    button.type = "button"
+    button.dataset.area = item.id
+    const name = document.createElement("strong")
+    name.textContent = item.name
+    const detail = document.createElement("span")
+    detail.textContent = item.detail
+    button.append(name, detail)
+    button.addEventListener("click", () => closeAreaPicker(item))
+    row.append(button)
+    areaList.append(row)
+  }
+  areaOpen.addEventListener("click", () => {
+    void pickArea(false).then((picked) => {
+      if (!picked) return
+      const before = { ...(selected ?? centerTrip(area, DEFAULT_MINUTES)), minutes: clampMinutes(Number(minutesInput.value)) }
+      const trip = centerTrip(picked, before.minutes)
+      applyTrip(trip)
+      void runTrip(trip, false, picked).then((ok) => {
+        if (!ok) applyTrip(before)
+      })
+    })
+  })
+  areaClose.addEventListener("click", () => closeAreaPicker(null))
+  document.querySelector("#area-backdrop")?.addEventListener("click", () => closeAreaPicker(null))
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !areaPicker.hidden) closeAreaPicker(null)
+  })
+}
+
+/**
+ * Show the area picker. On a first visit it is locked (no Close, no backdrop
+ * dismiss) and the curtain card steps aside. Resolves with the chosen area, or
+ * null when dismissed.
+ */
+function pickArea(locked: boolean): Promise<Area | null> {
+  closeAreaPicker(null, true)
+  pickLocked = locked
+  areaPicker.hidden = false
+  areaPicker.dataset.locked = locked ? "true" : "false"
+  areaClose.hidden = locked
+  curtain.classList.toggle("is-picking", locked)
+  areaOpen.setAttribute("aria-expanded", "true")
+  const buttons = [...areaList.querySelectorAll<HTMLButtonElement>("button")]
+  for (const button of buttons) {
+    if (!locked && button.dataset.area === area.id) button.setAttribute("aria-current", "true")
+    else button.removeAttribute("aria-current")
+  }
+  const current = buttons.find((button) => button.dataset.area === area.id) ?? buttons[0]
+  current?.focus()
+  return new Promise((resolve) => {
+    pickResolve = resolve
+  })
+}
+
+function closeAreaPicker(picked: Area | null, force = false) {
+  const resolve = pickResolve
+  if (!resolve) return
+  if (!picked && pickLocked && !force) return
+  pickResolve = null
+  areaPicker.hidden = true
+  curtain.classList.remove("is-picking")
+  areaOpen.setAttribute("aria-expanded", "false")
+  if (!pickLocked) areaOpen.focus()
+  resolve(picked)
 }
 
 function setStatus(text: string, curtainToo: boolean) {

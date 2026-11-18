@@ -15,7 +15,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <meta
       name="description"
-      content="Boston Home Search. Streets within a Tuesday-morning drive, lighting up from any address."
+      content="Boston Home Search. Streets within a Tuesday-morning drive from Belmont, Needham, or Wellesley, lighting up from any address."
     />
     <title>Boston Home Search</title>
   </head>
@@ -54,6 +54,11 @@
             <p class="sub" id="sub">Tuesday morning, about 8:00</p>
           </div>
         </header>
+        <button type="button" id="area-open" aria-haspopup="dialog" aria-expanded="false">
+          <span class="area-pin" aria-hidden="true"></span>
+          <span id="area-open-name">Kendall</span>
+          <span class="sr">, change area</span>
+        </button>
         <button type="button" id="filters-open" aria-haspopup="dialog" aria-expanded="false">Filters</button>
       </div>
       <section id="legend" class="legend" data-collapsed="false" aria-label="Drive time legend">
@@ -81,13 +86,13 @@
           <button type="button" data-kind="both" aria-pressed="true">Both</button>
         </div>
         <button type="button" id="listing-list-toggle" aria-expanded="false">List</button>
-        <p class="listing-note">from Kendall School</p>
+        <p class="listing-note" data-listing-origin>from Kendall School</p>
       </div>
       <section id="listing-sheet" class="listing-sheet" hidden aria-label="Listings by drive time">
         <header>
           <div>
             <h2>Listings</h2>
-            <p>from Kendall School</p>
+            <p data-listing-origin>from Kendall School</p>
           </div>
           <button type="button" id="listing-sheet-close">Close</button>
         </header>
@@ -115,6 +120,16 @@
           <p id="curtain-status">Reading Tuesday morning traffic…</p>
           <div class="bar" aria-hidden="true"><span></span></div>
         </div>
+      </div>
+      <div id="area-picker" class="area-picker" hidden>
+        <button type="button" class="area-backdrop" id="area-backdrop" aria-label="Close area picker" tabindex="-1"></button>
+        <section class="area-card" role="dialog" aria-modal="true" aria-labelledby="area-title">
+          <p class="eyebrow">Boston Home Search</p>
+          <h2 id="area-title">Where does the drive start?</h2>
+          <p class="area-sub">Streets and home listings are timed from the place you pick. You can switch any time.</p>
+          <ul id="area-list" class="area-list"></ul>
+          <button type="button" id="area-close">Close</button>
+        </section>
       </div>
       <div id="error" class="error" hidden>
         <div class="error-card">

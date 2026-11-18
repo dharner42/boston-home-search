@@ -88,7 +88,9 @@ function serviceWorkerPlugin(): Plugin {
         "/data/travel-grid.json",
         "/data/method.json",
       ])
-      const files = walk(dist).filter((file) => !skip.has(file))
+      // Per-area listings and baked drives are fetched on demand, not precached.
+      const perArea = /^\/data\/(listings|reach|method)-[a-z]+\.(json|bin)$/
+      const files = walk(dist).filter((file) => !skip.has(file) && !perArea.test(file))
       if (!files.includes("/")) files.unshift("/")
       const hash = createHash("sha256")
       for (const file of files) {
