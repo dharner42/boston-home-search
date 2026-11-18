@@ -21,7 +21,7 @@ export type Listing = {
 }
 
 export type AnnotatedListing = Listing & {
-  /** Minutes from The Kendall School, or null outside the 20-minute grid. */
+  /** Minutes from the active origin, or null outside the timed grid. */
   driveMinutes: number | null
 }
 
@@ -43,8 +43,8 @@ export function annotateListings(listings: Listing[], grid: TravelGrid): Annotat
   }))
 }
 
-export function formatDrive(minutes: number | null): string {
-  if (minutes == null) return "20+ min"
+export function formatDrive(minutes: number | null, maxMinutes = 20): string {
+  if (minutes == null || minutes > maxMinutes + 0.05) return `${maxMinutes}+ min`
   const rounded = minutes < 10 ? Math.round(minutes * 10) / 10 : Math.round(minutes)
   return `${rounded} min`
 }
@@ -75,7 +75,7 @@ export type ListingFeatureCollection = {
   features: ListingFeature[]
 }
 
-export function listingsToGeoJSON(listings: AnnotatedListing[]): ListingFeatureCollection {
+export function listingsToGeoJSON(listings: AnnotatedListing[], maxMinutes = 20): ListingFeatureCollection {
   return {
     type: "FeatureCollection",
     features: listings.map((listing) => ({
@@ -87,7 +87,7 @@ export function listingsToGeoJSON(listings: AnnotatedListing[]): ListingFeatureC
         price: listing.price,
         priceLabel: formatPrice(listing),
         driveMinutes: listing.driveMinutes,
-        driveLabel: formatDrive(listing.driveMinutes),
+        driveLabel: formatDrive(listing.driveMinutes, maxMinutes),
         isNew: Boolean(listing.isNew),
         address: listing.address ?? "",
         url: listing.url ?? "",
@@ -97,15 +97,17 @@ export function listingsToGeoJSON(listings: AnnotatedListing[]): ListingFeatureC
 }
 
 /**
- * Load listings.json (404 → empty), join each pin to the 20-minute drive grid,
+ * Load listings.json (404 → empty), join each pin to the active drive grid,
  * and return GeoJSON ready for a MapLibre pin layer.
  *
- * Not called by the map yet. The next milestone adds the layer; this function
- * is the only data hook it needs.
+ * Pass the grid for the current origin. Without one, the baked Kendall grid is used.
  */
-export async function prepareListingPins(listingsUrl = LISTINGS_URL): Promise<ListingFeatureCollection> {
-  const [listings, grid] = await Promise.all([loadListings(listingsUrl), loadTravelGrid()])
-  return listingsToGeoJSON(annotateListings(listings, grid))
+export async function prepareListingPins(
+  grid?: TravelGrid,
+  listingsUrl = LISTINGS_URL,
+): Promise<ListingFeatureCollection> {
+  const [listings, drive] = await Promise.all([loadListings(listingsUrl), grid ? Promise.resolve(grid) : loadTravelGrid()])
+  return listingsToGeoJSON(annotateListings(listings, drive), drive.maxMinutes)
 }
 
 function isListing(value: unknown): value is Listing {

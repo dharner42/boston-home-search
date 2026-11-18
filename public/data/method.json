@@ -1,156 +1,52 @@
 {
-  "generatedAt": "2026-11-18T01:09:31Z",
-  "summary": "Free-flow drive time is street length divided by speed. Speed is the OSM maxspeed tag when present, otherwise the highway-class default in FREEFLOW_MPH. Times are one-way aware. Intersection delay and congestion are not included.",
-  "anchor": {
-    "osm": "way/29580670",
-    "name": "Kendall School",
-    "housenumber": "577",
-    "street": "Belmont Street",
-    "centroid": [
-      -71.17640130983217,
-      42.379809840920856
-    ],
-    "insideFootprint": true,
-    "nominatimMeters": 2.28,
-    "snap": {
-      "street": "Belmont Street",
-      "highway": "secondary",
-      "distanceMeters": 23.74,
-      "lon": -71.17646606783767,
-      "lat": 42.379602038680666
-    }
+  "generatedAt": "2026-11-18T02:38:12.676Z",
+  "summary": "Street times are free-flow OpenStreetMap lengths scaled separately for highways, primary roads, secondary roads, and local streets, plus a signal delay at surface intersections. Parameters are fit to Mapbox driving-traffic for a Tuesday 8:00 departure, then bracketed by the traffic isochrone.",
+  "departAt": "2026-11-24T08:00",
+  "model": {
+    "surface": 1.3,
+    "secondary": 1.1700000000000002,
+    "primary": 3.4,
+    "highway": 2.7,
+    "signal": 4
   },
-  "formula": "seconds = (length_m / speed_mps) * RUSH_FACTOR[highway] * GLOBAL_RUSH_MULTIPLIER + intersection_delay",
-  "freeFlowMph": {
-    "motorway": 65,
-    "motorway_link": 40,
-    "trunk": 50,
-    "trunk_link": 30,
-    "primary": 35,
-    "primary_link": 25,
-    "secondary": 30,
-    "secondary_link": 25,
-    "tertiary": 25,
-    "tertiary_link": 25,
-    "unclassified": 25,
-    "residential": 25,
-    "living_street": 10
-  },
-  "rushFactor": {
-    "motorway": 1.0,
-    "motorway_link": 1.0,
-    "trunk": 1.0,
-    "trunk_link": 1.0,
-    "primary": 1.0,
-    "primary_link": 1.0,
-    "secondary": 1.0,
-    "secondary_link": 1.0,
-    "tertiary": 1.0,
-    "tertiary_link": 1.0,
-    "unclassified": 1.0,
-    "residential": 1.0,
-    "living_street": 1.0
-  },
-  "globalRushMultiplier": 1.0,
-  "intersectionDelaySeconds": 0.0,
-  "excluded": [
-    "service roads and parking aisles",
-    "foot, cycle, and path ways",
-    "access=no and motor_vehicle=no"
-  ],
-  "searchRadiusMeters": 42000,
-  "bbox": [
-    -71.687146101149,
-    42.002537906503775,
-    -70.66563409885102,
-    42.75711929349623
-  ],
-  "maxReachMeters": 26878.1,
-  "maxReachMinutes": 19.99,
-  "clipped": false,
-  "reachedNodes": 356751,
-  "ways": 120363,
-  "maxspeedWays": 32854,
-  "defaultSpeedWays": 87509,
-  "highwayCounts": {
-    "motorway": 2680,
-    "residential": 76975,
-    "unclassified": 2896,
-    "tertiary": 8897,
-    "secondary": 12149,
-    "motorway_link": 2693,
-    "primary": 9926,
-    "trunk_link": 559,
-    "primary_link": 592,
-    "trunk": 2179,
-    "living_street": 75,
-    "secondary_link": 523,
-    "tertiary_link": 219
-  },
-  "lengthKm": {
-    "1": 346.2,
-    "2": 1291.5,
-    "3": 2057.4,
-    "4": 2834.5
-  },
-  "bucketSeconds": 5,
-  "simplifyMeters": 4.0,
-  "grid": {
-    "cellMeters": 90.0,
-    "searchMeters": 175.0,
-    "cols": 454,
-    "rows": 383,
-    "encoding": "row-major uint8, minutes*10, 255 = outside 20 min or away from a reached road"
-  },
-  "source": "https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf",
+  "maeMinutes": 1.5,
+  "lines": 7866,
   "checks": [
     {
-      "name": "Belmont Town Hall",
-      "gridMinutes": 3.1,
-      "nearestNodeMinutes": 3.16,
-      "nearestNodeMeters": 32.9,
-      "straightKm": 1.87,
-      "impliedKmh": 36.3
+      "place": "Harvard Square",
+      "freeFlowMinutes": 6.5,
+      "mapboxTuesday8amMinutes": 19.8,
+      "thisMapMinutes": 17.5
     },
     {
-      "name": "Harvard Square",
-      "gridMinutes": 6.5,
-      "nearestNodeMinutes": 6.46,
-      "nearestNodeMeters": 16.5,
-      "straightKm": 4.78,
-      "impliedKmh": 44.1
+      "place": "Arlington Center",
+      "freeFlowMinutes": 7.1,
+      "mapboxTuesday8amMinutes": 16.1,
+      "thisMapMinutes": 15.9
     },
     {
-      "name": "Arlington Center",
-      "gridMinutes": 7.1,
-      "nearestNodeMinutes": 7.13,
-      "nearestNodeMeters": 31.0,
-      "straightKm": 4.3,
-      "impliedKmh": 36.3
+      "place": "Waltham Common",
+      "freeFlowMinutes": 6.4,
+      "mapboxTuesday8amMinutes": 11.9,
+      "thisMapMinutes": 14.4
     },
     {
-      "name": "Lexington Battle Green",
-      "gridMinutes": 13.1,
-      "nearestNodeMinutes": 12.93,
-      "nearestNodeMeters": 27.1,
-      "straightKm": 8.93,
-      "impliedKmh": 40.9
+      "place": "Lexington Center",
+      "freeFlowMinutes": 13.1,
+      "mapboxTuesday8amMinutes": 22,
+      "thisMapMinutes": 27.5
     },
     {
-      "name": "Waltham Common",
-      "gridMinutes": 6.4,
-      "nearestNodeMinutes": 6.45,
-      "nearestNodeMeters": 86.3,
-      "straightKm": 4.9,
-      "impliedKmh": 46.0
+      "place": "Boston Common",
+      "freeFlowMinutes": 13.4,
+      "mapboxTuesday8amMinutes": 30,
+      "thisMapMinutes": 33.3
     },
     {
-      "name": "Boston Common",
-      "gridMinutes": null,
-      "nearestNodeMinutes": 13.44,
-      "nearestNodeMeters": 202.1,
-      "straightKm": 9.48,
-      "impliedKmh": null
+      "place": "Cambridge Kendall Square",
+      "freeFlowMinutes": 11.4,
+      "mapboxTuesday8amMinutes": 31.6,
+      "thisMapMinutes": 27.7
     }
   ]
 }

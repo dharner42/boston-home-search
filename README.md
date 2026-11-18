@@ -1,137 +1,70 @@
-# Kendall
+# Boston Home Search
 
-A phone-friendly map of the drive around [The Kendall School](https://www.kendallschool.com/) at 577 Belmont Street, Belmont. On each visit the view flies in to the school, then pulls back while the streets light up in the order a car would reach them.
+A phone-friendly map of how far you can drive in a chosen number of minutes. It opens on [The Kendall School](https://www.kendallschool.com/) at 577 Belmont Street, Belmont, flies in, then lets color crawl along every street the way a car would reach it.
 
-Streets are colored in three bands:
+Streets are colored in three bands that split the drive you asked for. The default is 15 minutes, so the bands are 0–5, 5–10, and 10–15. Times are **Tuesday morning traffic around 8:00**, not empty-road speed limits.
 
-- **0–5 min** gold
-- **5–10 min** coral
-- **10–15 min** blue
-
-The 15–20 minute streets are computed and stored, but they stay dark. That outer ring is there so a later listings layer can still label a pin with its drive time.
-
-The basemap is [OpenFreeMap](https://openfreemap.org/) (dark), with CARTO Dark Matter as a fallback. Neither needs an API key. Map data is © OpenStreetMap contributors.
+The basemap is [OpenFreeMap](https://openfreemap.org/) dark, with CARTO Dark Matter as a fallback. Mapbox supplies the Tuesday-morning drive times and the address search. Its dark style uses shader functions MapLibre cannot run, so the streets are drawn on the OpenFreeMap basemap. Map data is © OpenStreetMap contributors.
 
 ## Run it
 
 ```bash
 npm install
+# .env.local with VITE_MAPBOX_TOKEN=pk...  (already set on Vercel)
 npm run dev
 ```
 
-Open [http://127.0.0.1:4731](http://127.0.0.1:4731). The drive-time files are already in `public/data/`, so the dev server does not rebuild them.
+Open [http://127.0.0.1:4731](http://127.0.0.1:4731). The Kendall 15-minute drive is baked into `public/data/reach.bin`, so the first view does not call Mapbox. Another address or another duration is computed by `/api/reach` and cached.
 
-`?frame=start`, `?frame=mid`, and `?frame=end` hold the opening shot, the middle of the light-up, and the finished map. Leave the query off for the real animation. Replay is the button at the top right.
+`?frame=start`, `?frame=mid`, and `?frame=end` hold the opening shot, the middle of the crawl, and the finished map. A shareable link looks like `/?lat=42.37347&lng=-71.11894&min=10&q=Harvard%20Square`. The last search is remembered in localStorage.
 
-## How the times are computed
+## Why the times changed
 
-Free-flow only: `time = length / speed`.
+The previous map used free-flow speed limits and ignored signals. A mile of 30 mph road was two minutes, even with three lights and a line of drop-off traffic. Checked against Mapbox Directions (`driving-traffic`, depart Tuesday 8:00 America/New_York) that was roughly two to three times too fast. Harvard Square was 6.5 minutes on the old map and 19.8 minutes in Tuesday traffic.
 
-- If the street has an OpenStreetMap `maxspeed` tag, that speed is used (`25 mph` and similar).
-- Otherwise the speed comes from the highway class in `FREEFLOW_MPH` inside `scripts/generate_drive_times.py` (for example residential 25 mph, primary 35 mph, motorway 65 mph).
-- One-way streets, including motorways and roundabouts, are honored.
-- Service roads, parking aisles, and foot or bike paths are left out.
-- Traffic lights and congestion are not modeled. A mile of 30 mph road is two minutes, even if it has three signals.
+The new model still routes on the OpenStreetMap drive network (one-ways and posted speeds, from `server/graph.bin`). Each edge is scaled by a class multiplier, and surface-street intersections add a small delay. Those parameters are fit to Mapbox Directions samples around the origin, then any street that falls outside a Mapbox traffic isochrone is pushed out to that contour so the color bands agree with the isochrone. The same fitted times drive the crawl: each segment fills from the end reached first toward the other end.
 
-The anchor is OSM way [29580670](https://www.openstreetmap.org/way/29580670), the school building. The generator checks that the coordinate sits inside that footprint, then starts the route on the nearest drivable street (Belmont Street, a few meters off the door).
+| Place | Old free-flow | Tuesday 8:00 (Mapbox) | This map |
+| --- | ---: | ---: | ---: |
+| Harvard Square | 6.5 | 19.8 | 17.5 |
+| Arlington Center | 7.1 | 16.1 | 15.9 |
+| Waltham Common | 6.4 | 11.9 | 14.4 |
+| Lexington Center | 13.1 | 22.0 | 27.5 |
+| Boston Common | 13.4 | 30.0 | 33.3 |
+| Cambridge Kendall Square | 11.4 | 31.6 | 27.7 |
 
-Routing is Dijkstra on the driveable graph, cut off at 20 minutes. The search area is a 42 km radius around the school, which is past the farthest point a 65 mph road can reach in that time. The script refuses to write output if the 20-minute network runs into the edge of that area.
+Average absolute error against Mapbox on these six trips is about 3 minutes, versus about 12 minutes for the free-flow map. Lexington runs long; the Cambridge trips that used to look like a short hop are now in the right band. Full rows are in `public/data/comparison.json`.
 
-Street geometry is bucketed every 5 seconds of drive time, simplified by about 4 meters, then packed into `streets.bin` (uint16 coordinates, about a meter of error, under 1 MB). The page decodes that file and draws it as MapLibre line layers. The opening light-up turns those layers on in drive-time order, so the animation does not rebuild the road geometry every frame. A touch or scroll on the map stops the flyover and leaves you in control. Details of the last run are in `public/data/method.json`.
+## Any address, 5–30 minutes
 
-### Rush hour later
+The search box geocodes with Mapbox. Go computes a new spiderweb. Inside the Boston extract (about 42 km around the school) that is a shortest path on the prebuilt graph plus a handful of Mapbox calls, usually a couple of seconds. Outside it, the server reads OpenFreeMap road tiles for the isochrone and routes those. Results are cached on the CDN for 12 hours and in the browser after the first fetch.
 
-In `scripts/generate_drive_times.py`:
+Listings in `public/data/listings.json` are labeled with the same grid and the same origin, out to the drive time plus five minutes.
 
-- `GLOBAL_RUSH_MULTIPLIER` scales every street. `1.4` means 40% slower.
-- `RUSH_FACTOR` does the same per highway class. A useful sketch is motorway `1.35`, primary `1.7`, secondary `1.55`, tertiary `1.4`, residential `1.25`.
-- `INTERSECTION_DELAY_S` adds a fixed wait, in seconds, each time a route arrives at a junction. Leave it at `0` for pure free-flow.
+## Regenerate
 
-Then regenerate. The map reads the new files; no app change is required.
-
-## Regenerate the drive-time files
-
-Requires [osmium-tool](https://osmcode.org/osmium-tool/) (`sudo apt install osmium-tool` on Debian or Ubuntu) and a Python 3.11+ venv.
+The road graph needs [osmium-tool](https://osmcode.org/osmium-tool/) and the Massachusetts extract (the script downloads it):
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r scripts/requirements.txt
-python scripts/generate_drive_times.py
+python scripts/build_graph.py
 ```
 
-The first run downloads the Massachusetts OpenStreetMap extract (about 300 MB) into `data/cache/`, which is gitignored. Later runs reuse the clipped roads unless you pass `--force`.
+Rebuild the baked Kendall drive, the comparison table, and the listings grid with `VITE_MAPBOX_TOKEN` set:
 
-| File | What it is |
-| --- | --- |
-| `public/data/streets.bin` | Streets under 15 minutes, packed for the map. This is the file the page loads. |
-| `public/data/streets.geojson` | The same streets as readable GeoJSON. Not fetched on page load. |
-| `public/data/streets-15-20.geojson` | The unlit 15–20 minute streets. Not fetched on page load. |
-| `public/data/travel-grid.json` | About a 90 m grid of drive times out to 20 minutes, for pin labels. |
-| `public/data/meta.json` | School coordinate, band colors, and the camera bounds. |
-| `public/data/method.json` | Speeds, counts, and the landmark checks from the last run. |
-
-Cell values in the grid are minutes × 10. `255` means the point is outside the 20-minute window or more than about 175 m from a reached road. `src/travel-time.ts` reads it.
-
-## Listings, next
-
-Do not add pins in this version. When rental and for-sale listings show up, drop them in `public/data/listings.json` (a job can overwrite that file a few times a day) and add a pin layer. Nothing else needs to change.
-
-```json
-[
-  {
-    "id": "123",
-    "type": "rent",
-    "price": 4200,
-    "lon": -71.18,
-    "lat": 42.39,
-    "address": "12 Example St, Belmont, MA",
-    "isNew": true,
-    "url": "https://example.com/listing/123",
-    "beds": 3,
-    "baths": 1
-  }
-]
+```bash
+node --experimental-strip-types scripts/bake-default.ts
 ```
 
-`type` is `"rent"` or `"sale"`. `price` is monthly rent, or the sale price, in dollars. A missing file is treated as no listings.
+`scripts/generate_drive_times.py` still builds the old free-flow files if you want that baseline. The site does not load them.
 
-`src/listings.ts` already loads that file, joins each pin to the 20-minute grid, and returns GeoJSON. Drive time, price, type, and the new flag are properties on each feature (`driveMinutes`, `driveLabel`, `priceLabel`, `type`, `isNew`). The pin layer is the piece still to write:
+## Install and deploy
 
-```ts
-import { prepareListingPins } from "./listings.ts"
-
-const pins = await prepareListingPins()
-map.addSource("listings", { type: "geojson", data: pins })
-map.addLayer({
-  id: "listings",
-  type: "circle",
-  source: "listings",
-  paint: {
-    "circle-color": ["match", ["get", "type"], "rent", "#FFC857", "sale", "#7EB6FF", "#ffffff"],
-    "circle-radius": 6,
-    "circle-stroke-width": 1.5,
-    "circle-stroke-color": "#0b0e13",
-  },
-})
-```
-
-Use `driveLabel` and `priceLabel` as the text on the pin. `driveLabel` is `"20+ min"` when the place sits outside the grid.
-
-## Install it
-
-Boston Home Search is a standalone web app. On a phone: open the site, then Add to Home Screen (iPhone: Share, then Add to Home Screen; Android: the install prompt, or the browser menu). It opens full screen, dark status bar, and works in portrait or landscape.
-
-The service worker, written into `dist/sw.js` at build time, precaches the app shell and the drive-time files so the map comes back quickly and still opens offline. `data/listings.json` is not precached. When the phone is online the worker always asks the network for that file first (it will be replaced a few times a day) and only falls back to the last copy if the network is down.
-
-## Deploy
-
-The site is static. Vercel (or any host that serves a folder) is enough.
+Boston Home Search is a standalone web app. On a phone: open the site, then Add to Home Screen. The service worker precaches the shell. Drive-time files and Mapbox/OpenFreeMap tiles are cached after the first view. `data/listings.json` and `/api/reach` stay network-first.
 
 ```bash
 npm run build
 ```
 
-`vercel.json` already sets the framework to Vite, `npm ci`, build command `npm run build`, and output directory `dist`. There are no environment variables and no API key. A clean checkout is `npm ci && npm run build`.
-
-`sw.js` and `data/listings.json` are sent with `Cache-Control: no-cache` and `CDN-Cache-Control: no-store`, so Vercel's CDN does not keep a stale worker or a stale listings file. The worker itself still asks the network for listings first.
+`vercel.json` sets Vite, `npm ci`, `npm run build`, and `dist`. The reach function includes `server/graph.bin`. Set `VITE_MAPBOX_TOKEN` for Production, Preview, and Development. Do not commit the token.

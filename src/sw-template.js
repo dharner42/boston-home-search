@@ -2,6 +2,7 @@
 const CACHE = "%%CACHE%%"
 const LISTINGS_CACHE = "listings-v1"
 const TILE_CACHE = "tiles-v1"
+const REACH_CACHE = "reach-v1"
 const PRECACHE = %%PRECACHE%%
 
 self.addEventListener("install", (event) => {
@@ -20,7 +21,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE && key !== LISTINGS_CACHE && key !== TILE_CACHE)
+            .filter((key) => key !== CACHE && key !== LISTINGS_CACHE && key !== TILE_CACHE && key !== REACH_CACHE)
             .map((key) => caches.delete(key)),
         ),
       )
@@ -36,6 +37,10 @@ self.addEventListener("fetch", (event) => {
     if (url.pathname === "/sw.js") return
     if (url.pathname === "/data/listings.json") {
       event.respondWith(listingsFirst(request))
+      return
+    }
+    if (url.pathname === "/api/reach") {
+      event.respondWith(networkFirst(request, REACH_CACHE))
       return
     }
     if (url.pathname.startsWith("/data/")) {
@@ -110,8 +115,23 @@ function staleWhileRevalidate(event) {
   return cachedPromise.then((cached) => cached || update.then((fresh) => fresh || Response.error()))
 }
 
+async function networkFirst(request, cacheName) {
+  const cache = await caches.open(cacheName)
+  try {
+    const fresh = await fetch(request)
+    if (fresh.ok) await cache.put(request, fresh.clone())
+    return fresh
+  } catch {
+    return (await cache.match(request)) || Response.error()
+  }
+}
+
 function isMapTile(url) {
+  const mapboxTile =
+    url.hostname === "api.mapbox.com" &&
+    (url.pathname.includes("/v4/") || url.pathname.includes("/tiles/") || url.pathname.endsWith(".pbf"))
   return (
+    mapboxTile ||
     url.hostname.endsWith("openfreemap.org") ||
     url.hostname.endsWith("cartocdn.com") ||
     url.hostname.endsWith("basemaps.cartocdn.com")

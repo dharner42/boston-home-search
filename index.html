@@ -15,7 +15,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <meta
       name="description"
-      content="Boston Home Search. Streets within a drive of The Kendall School in Belmont, lighting up from the school."
+      content="Boston Home Search. Streets within a Tuesday-morning drive, lighting up from any address."
     />
     <title>Boston Home Search</title>
   </head>
@@ -23,17 +23,36 @@
     <div id="app" data-state="loading">
       <div id="map" role="region" aria-label="Map"></div>
       <header class="brand">
-        <p class="eyebrow">Boston Home Search</p>
-        <h1>Kendall</h1>
-        <p class="sub">By car from the school</p>
+        <h1 class="eyebrow">Boston Home Search</h1>
+        <form id="trip" autocomplete="off">
+          <label class="place">
+            <span class="sr">Starting address</span>
+            <input id="place" name="place" placeholder="Starting address" enterkeyhint="search" maxlength="120" />
+          </label>
+          <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+          <div class="trip-row">
+            <div class="stepper">
+              <button type="button" id="min-down" aria-label="Fewer minutes">−</button>
+              <label class="minutes">
+                <span class="sr">Drive time in minutes</span>
+                <input id="minutes" name="minutes" inputmode="numeric" min="5" max="30" step="1" value="15" />
+                <span>min</span>
+              </label>
+              <button type="button" id="min-up" aria-label="More minutes">+</button>
+            </div>
+            <button type="submit" id="go">Go</button>
+          </div>
+        </form>
+        <p class="sub" id="sub">Tuesday morning, about 8:00</p>
       </header>
       <section id="legend" class="legend" aria-label="Drive time legend"></section>
+      <p id="status" class="status" hidden><span id="status-text"></span></p>
       <button type="button" id="action" class="action" hidden>Skip</button>
       <div id="curtain" role="status">
         <div class="curtain-card">
           <p class="eyebrow">Boston Home Search</p>
-          <h1>Kendall</h1>
-          <p id="curtain-status">Charting the drive from school…</p>
+          <h2>The morning drive</h2>
+          <p id="curtain-status">Reading Tuesday morning traffic…</p>
           <div class="bar" aria-hidden="true"><span></span></div>
         </div>
       </div>
