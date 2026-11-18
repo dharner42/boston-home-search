@@ -3,10 +3,22 @@ import "@fontsource-variable/outfit"
 import "maplibre-gl/dist/maplibre-gl.css"
 import "./style.css"
 
-import { AREAS, DEFAULT_AREA, DEFAULT_MINUTES, areaAt, areaById, type Area } from "./areas.ts"
+import {
+  AREAS,
+  DEFAULT_AREA,
+  DEFAULT_MINUTES,
+  areaAt,
+  areaIds,
+  areaShort,
+  groupName,
+  listPhrase,
+  parseAreas,
+  sameAreas,
+  type Area,
+} from "./areas.ts"
 import { criteriaLines, originPhrase } from "./criteria.ts"
 import { mountListingUi } from "./listing-ui.ts"
-import { listingsToGeoJSON, loadListingViews } from "./listings.ts"
+import { listingsToGeoJSON, loadMergedListings } from "./listings.ts"
 import { mountMap, type FrameName, type MapHandle, type ReachView } from "./map-view.ts"
 import { decodeReach, type ReachData } from "./reach/codec.ts"
 import { nextTuesdayMorning } from "./reach/tuesday.ts"
@@ -47,6 +59,8 @@ const areaOpenName = must(document.querySelector<HTMLElement>("#area-open-name")
 const areaPicker = must(document.querySelector<HTMLElement>("#area-picker"), "area picker")
 const areaList = must(document.querySelector<HTMLElement>("#area-list"), "area list")
 const areaClose = must(document.querySelector<HTMLButtonElement>("#area-close"), "area close")
+const areaChips = must(document.querySelector<HTMLElement>("#area-chips"), "area chips")
+const areaTogether = must(document.querySelector<HTMLButtonElement>("#area-together"), "area together")
 
 retry.addEventListener("click", () => window.location.reload())
 
@@ -65,9 +79,14 @@ let suggestTimer = 0
 let suggestAbort: AbortController | null = null
 let updatedAt: string | null = null
 let panelsSettled = false
-let area: Area = DEFAULT_AREA
-let pickResolve: ((picked: Area | null) => void) | null = null
+/** The chosen areas. Listings come from all of them; one area is the usual case. */
+let areas: Area[] = [DEFAULT_AREA]
+/** What the map currently shows (or is about to). */
+let shown: Shown = groupShown([DEFAULT_AREA], DEFAULT_MINUTES)
+let pickResolve: ((picked: Area[] | null) => void) | null = null
 let pickLocked = false
+/** Areas ticked under "View together" in the picker. */
+let togetherPicks = new Set<string>(AREAS.map((item) => item.id))
 
 wireAreas()
 void boot()
@@ -77,8 +96,8 @@ wirePanels()
 
 async function boot() {
   const start = readStart()
-  applyArea(start.area)
-  applyTrip(start.trip)
+  applyAreas(start.areas)
+  applyShown(start.shown)
   // On a first visit the picker opens while the basemap loads behind the curtain.
   const picking = start.needsPick ? pickArea(true) : null
   action.addEventListener("click", () => {
@@ -88,7 +107,8 @@ async function boot() {
   })
   try {
     setStatus("Opening the map…", true)
-    handle = await mountMap(must(document.querySelector<HTMLElement>("#map"), "map"), start.trip, (ui) => {
+    const opening = start.shown.trips[0] ?? centerTrip(DEFAULT_AREA, DEFAULT_MINUTES)
+    handle = await mountMap(must(document.querySelector<HTMLElement>("#map"), "map"), opening, (ui) => {
       action.hidden = false
       action.textContent = ui.label
       app.dataset.state = ui.state
@@ -96,19 +116,19 @@ async function boot() {
     })
     handle.onListingClick = (id) => listingUi.open(id)
     handle.onListingsVisible = (visible) => listingUi.setVisible(visible)
-    let trip = start.trip
+    let next = start.shown
     if (picking) {
-      applyArea((await picking) ?? area)
-      trip = centerTrip(area, DEFAULT_MINUTES)
-      applyTrip(trip)
+      applyAreas((await picking) ?? areas)
+      next = groupShown(areas, DEFAULT_MINUTES)
+      applyShown(next)
     }
     try {
-      await runTrip(trip, true)
+      await runTrip(next, true)
     } catch (error) {
-      if (homeView(trip)) throw error
+      if (next.trips.every((trip) => homeView(trip))) throw error
       localStorage.removeItem(STORAGE_KEY)
-      const center = centerTrip(area, DEFAULT_MINUTES)
-      applyTrip(center)
+      const center = groupShown(areas, DEFAULT_MINUTES)
+      applyShown(center)
       await runTrip(center, true)
     }
   } catch (error) {
@@ -125,11 +145,12 @@ async function boot() {
 }
 
 /**
- * Load and play a drive. Listings come from `target` (the area), which only
- * becomes the current area once the drive has loaded, so a failed switch
- * leaves the map, pins and labels on the previous area.
+ * Load and play a drive, or several at once for areas shown together.
+ * Listings come from `target` (the areas), which only become the current
+ * areas once the drive has loaded, so a failed switch leaves the map, pins
+ * and labels on the previous areas.
  */
-async function runTrip(trip: Place & { minutes: number }, first: boolean, target: Area = area): Promise<boolean> {
+async function runTrip(next: Shown, first: boolean, target: Area[] = areas): Promise<boolean> {
   const messages = ["Reading Tuesday morning traffic…", "Tracing the streets…", "Timing the drive…"]
   let tick = 0
   setStatus(messages[0] ?? "", first)
@@ -138,11 +159,15 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean, target
     setStatus(messages[tick] ?? "", first)
   }, 1600)
   try {
-    const reach = await loadReach(trip)
-    const view = toView(reach, trip)
+    const reaches = await Promise.all(next.trips.map((trip) => loadReach(trip)))
+    const view = toView(reaches, next)
     handle?.show(view)
-    if (target !== area) applyArea(target)
-    const loaded = await loadListingViews(`/data/${target.listingsFile}`).catch(() => ({ listings: [], updatedAt: null }))
+    shown = next
+    if (!sameAreas(target, areas)) applyAreas(target)
+    else syncSearchName()
+    const loaded = await loadMergedListings(
+      target.map((item) => ({ url: `/data/${item.listingsFile}`, origin: item.name, originShort: areaShort(item) })),
+    )
     updatedAt = loaded.updatedAt
     listingUi.setListings(loaded.listings)
     handle?.setListings(listingsToGeoJSON(loaded.listings))
@@ -150,8 +175,8 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean, target
     window.clearInterval(timer)
     setStatus("", first)
     if (first) await fadeCurtain()
-    remember(trip)
-    writeUrl(trip)
+    remember(next)
+    writeUrl(next)
     if (frame && first) handle?.pose(frame)
     else if (reducedMotion) handle?.pose("end")
     else if (first) handle?.play()
@@ -224,7 +249,7 @@ function applyCollapsed(
 }
 
 function syncSearchName() {
-  const label = placeInput.value.trim() || area.name
+  const label = placeInput.value.trim() || shown.label
   searchName.textContent = label.length > 28 ? `${label.slice(0, 27)}…` : label
 }
 
@@ -242,9 +267,10 @@ function closeCriteria() {
 }
 
 function refreshCriteria() {
+  const nearest = `whichever of ${listPhrase(areas.map((item) => item.name))} is closest`
   const lines = criteriaLines({
-    origin: originPhrase(placeInput.value || area.name),
-    listingOrigin: area.origin,
+    origin: shown.group ? nearest : originPhrase(placeInput.value || shown.label),
+    listingOrigin: areas.length > 1 ? nearest : (areas[0] ?? DEFAULT_AREA).origin,
     streetMinutes: clampMinutes(Number(minutesInput.value)),
     filter: listingUi.getFilter(),
     updatedAt,
@@ -302,6 +328,12 @@ function wireForm() {
 async function submitTrip() {
   const minutes = clampMinutes(Number(minutesInput.value))
   minutesInput.value = String(minutes)
+  // Still showing areas together: Go re-times them with the new minutes.
+  if (shown.group && placeInput.value.trim() === shown.label) {
+    suggestions.hidden = true
+    await runTrip(groupShown(areas, minutes), false)
+    return
+  }
   let place = selected
   if (!place || place.label !== placeInput.value.trim()) {
     go.disabled = true
@@ -316,8 +348,7 @@ async function submitTrip() {
   selected = place
   placeInput.value = place.label
   suggestions.hidden = true
-  const trip = { ...place, minutes }
-  await runTrip(trip, false)
+  await runTrip(placeShown({ ...place, minutes }), false)
 }
 
 function showSuggestions(places: Place[]) {
@@ -377,18 +408,49 @@ async function loadReach(trip: Place & { minutes: number }): Promise<ReachData> 
   return decodeReach(bytes)
 }
 
-function toView(reach: ReachData, trip: Place & { minutes: number }): ReachView {
-  const header = reach.header
+function toView(reaches: ReachData[], next: Shown): ReachView {
+  const header = must(reaches[0] ?? null, "drive").header
+  const origins = reaches.map((reach, index) => ({
+    lon: reach.header.lon,
+    lat: reach.header.lat,
+    label: next.trips[index]?.label || reach.header.label,
+  }))
+  const firstOrigin = origins[0] ?? { lon: header.lon, lat: header.lat, label: next.label }
+  if (reaches.length === 1) {
+    const label = header.label || next.label
+    return {
+      label,
+      detail: `${header.minutes} min · Tue 8:00`,
+      lon: header.lon,
+      lat: header.lat,
+      minutes: header.minutes,
+      note: header.note,
+      bands: header.bands,
+      bounds: header.bounds,
+      lines: reaches[0]?.lines ?? [],
+      origins: [{ ...firstOrigin, label }],
+    }
+  }
+  // Areas together: every center's streets on one map. Where two drives cover
+  // the same street both are drawn, and the one reached sooner lights first.
+  const union = (key: "b1" | "b2" | "b3"): [number, number, number, number] => [
+    Math.min(...reaches.map((reach) => reach.header.bounds[key][0])),
+    Math.min(...reaches.map((reach) => reach.header.bounds[key][1])),
+    Math.max(...reaches.map((reach) => reach.header.bounds[key][2])),
+    Math.max(...reaches.map((reach) => reach.header.bounds[key][3])),
+  ]
   return {
-    label: header.label || trip.label,
+    label: next.label,
     detail: `${header.minutes} min · Tue 8:00`,
-    lon: header.lon,
-    lat: header.lat,
+    lon: origins.reduce((sum, origin) => sum + origin.lon, 0) / origins.length,
+    lat: origins.reduce((sum, origin) => sum + origin.lat, 0) / origins.length,
     minutes: header.minutes,
-    note: header.note,
+    note: `${header.note} Each street shows its drive from the closest center.`,
     bands: header.bands,
-    bounds: header.bounds,
-    lines: reach.lines,
+    bounds: { b1: union("b1"), b2: union("b2"), b3: union("b3") },
+    lines: reaches.flatMap((reach) => reach.lines),
+    origins,
+    kicker: "From the closest center",
   }
 }
 
@@ -399,7 +461,23 @@ function homeView(trip: { lon: number; lat: number; minutes: number }): Area | n
 
 type Trip = Place & { minutes: number }
 
-type Start = { trip: Trip; area: Area; needsPick: boolean }
+/**
+ * What the map shows: one drive (an area center or a searched address), or
+ * several area centers together (`group`).
+ */
+type Shown = { trips: Trip[]; label: string; minutes: number; group: boolean }
+
+type Start = { shown: Shown; areas: Area[]; needsPick: boolean }
+
+function groupShown(list: Area[], minutes: number): Shown {
+  const only = list.length === 1 ? list[0] : undefined
+  if (only) return placeShown(centerTrip(only, minutes))
+  return { trips: list.map((item) => centerTrip(item, minutes)), label: groupName(list), minutes, group: true }
+}
+
+function placeShown(trip: Trip): Shown {
+  return { trips: [trip], label: trip.label, minutes: trip.minutes, group: false }
+}
 
 /**
  * What to open on. A shared link or a remembered area opens straight away.
@@ -414,24 +492,32 @@ function readStart(): Start {
     url.searchParams.delete("reset")
     history.replaceState(null, "", url)
   }
-  const savedArea = areaById(localStorage.getItem(AREA_KEY))
-  const urlArea = areaById(params.get("area"))
+  const savedAreas = parseAreas(localStorage.getItem(AREA_KEY))
+  const urlAreas = parseAreas(params.get("area"))
   const fromUrl = tripFromParams(params)
   if (fromUrl) {
-    const chosen = urlArea ?? areaAt(fromUrl.lon, fromUrl.lat) ?? savedArea ?? DEFAULT_AREA
-    return { trip: fromUrl, area: chosen, needsPick: false }
+    const at = areaAt(fromUrl.lon, fromUrl.lat)
+    const chosen = urlAreas ?? (at ? [at] : null) ?? savedAreas ?? [DEFAULT_AREA]
+    return { shown: placeShown(fromUrl), areas: chosen, needsPick: false }
   }
-  if (urlArea) return { trip: centerTrip(urlArea, DEFAULT_MINUTES), area: urlArea, needsPick: false }
-  if (savedArea) {
-    return { trip: readSavedTrip() ?? centerTrip(savedArea, DEFAULT_MINUTES), area: savedArea, needsPick: false }
+  if (urlAreas) {
+    const minutes = clampMinutes(Number(params.get("min") ?? DEFAULT_MINUTES))
+    return { shown: groupShown(urlAreas, minutes), areas: urlAreas, needsPick: false }
+  }
+  if (savedAreas) {
+    const saved = readSaved()
+    const next = saved && "lon" in saved ? placeShown(saved) : groupShown(savedAreas, saved?.minutes ?? DEFAULT_MINUTES)
+    return { shown: next, areas: savedAreas, needsPick: false }
   }
   // Screenshot frames (?frame=) skip the picker and use the default area.
-  return { trip: centerTrip(DEFAULT_AREA, DEFAULT_MINUTES), area: DEFAULT_AREA, needsPick: frame == null }
+  return { shown: groupShown([DEFAULT_AREA], DEFAULT_MINUTES), areas: [DEFAULT_AREA], needsPick: frame == null }
 }
 
-function readSavedTrip(): Trip | null {
+/** A remembered address, or just the minutes of a remembered areas-together view. */
+function readSaved(): Trip | { minutes: number } | null {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "") as Partial<Trip>
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "") as Partial<Trip> & { group?: boolean }
+    if (saved.group) return { minutes: clampMinutes(Number(saved.minutes)) }
     if (typeof saved.lon === "number" && typeof saved.lat === "number" && typeof saved.label === "string") {
       return { lon: saved.lon, lat: saved.lat, label: saved.label, minutes: clampMinutes(Number(saved.minutes)) }
     }
@@ -455,33 +541,47 @@ function tripFromParams(params: URLSearchParams): Trip | null {
   return { lon, lat, label, minutes }
 }
 
-function applyTrip(trip: Trip) {
-  selected = { label: trip.label, lon: trip.lon, lat: trip.lat }
-  placeInput.value = trip.label
-  minutesInput.value = String(trip.minutes)
+function applyShown(next: Shown) {
+  shown = next
+  const trip = next.trips[0]
+  selected = !next.group && trip ? { label: trip.label, lon: trip.lon, lat: trip.lat } : null
+  placeInput.value = next.label
+  minutesInput.value = String(next.minutes)
   syncSearchName()
 }
 
-function remember(trip: Trip) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(trip))
-  localStorage.setItem(AREA_KEY, area.id)
+function remember(next: Shown) {
+  const trip = next.trips[0]
+  const saved = next.group || !trip ? { group: true, minutes: next.minutes } : trip
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+  localStorage.setItem(AREA_KEY, areaIds(areas))
 }
 
-function writeUrl(trip: Trip) {
+function writeUrl(next: Shown) {
   const url = new URL(window.location.href)
-  url.searchParams.set("lat", trip.lat.toFixed(5))
-  url.searchParams.set("lng", trip.lon.toFixed(5))
-  url.searchParams.set("min", String(trip.minutes))
-  url.searchParams.set("q", trip.label)
-  url.searchParams.set("area", area.id)
+  const trip = next.trips[0]
+  if (next.group || !trip) {
+    for (const key of ["lat", "lng", "lon", "q"]) url.searchParams.delete(key)
+  } else {
+    url.searchParams.set("lat", trip.lat.toFixed(5))
+    url.searchParams.set("lng", trip.lon.toFixed(5))
+    url.searchParams.set("q", trip.label)
+  }
+  url.searchParams.set("min", String(next.minutes))
+  url.searchParams.set("area", areaIds(areas))
   history.replaceState(null, "", url)
 }
 
-function applyArea(next: Area) {
-  area = next
-  areaOpenName.textContent = next.name.split(" ")[0] ?? next.name
-  areaOpen.setAttribute("aria-label", `Area: ${next.name}. Change area`)
-  listingUi.setOrigin(next.name)
+function applyAreas(next: Area[]) {
+  areas = next
+  const only = next.length === 1 ? next[0] : undefined
+  areaOpenName.textContent = only
+    ? areaShort(only)
+    : next.length === AREAS.length
+      ? "All areas"
+      : next.map(areaShort).join(" + ")
+  areaOpen.setAttribute("aria-label", `Area: ${listPhrase(next.map((item) => item.name))}. Change area`)
+  listingUi.setOrigin(only ? only.name : "the closest area")
   syncSearchName()
 }
 
@@ -496,18 +596,35 @@ function wireAreas() {
     const detail = document.createElement("span")
     detail.textContent = item.detail
     button.append(name, detail)
-    button.addEventListener("click", () => closeAreaPicker(item))
+    button.addEventListener("click", () => closeAreaPicker([item]))
     row.append(button)
     areaList.append(row)
+
+    const chip = document.createElement("button")
+    chip.type = "button"
+    chip.className = "area-chip"
+    chip.dataset.area = item.id
+    chip.textContent = areaShort(item)
+    chip.setAttribute("aria-label", `Include ${item.name}`)
+    chip.addEventListener("click", () => {
+      if (togetherPicks.has(item.id)) togetherPicks.delete(item.id)
+      else togetherPicks.add(item.id)
+      paintTogether()
+    })
+    areaChips.append(chip)
   }
+  areaTogether.addEventListener("click", () => {
+    const picked = AREAS.filter((item) => togetherPicks.has(item.id))
+    if (picked.length >= 2) closeAreaPicker(picked)
+  })
   areaOpen.addEventListener("click", () => {
     void pickArea(false).then((picked) => {
       if (!picked) return
-      const before = { ...(selected ?? centerTrip(area, DEFAULT_MINUTES)), minutes: clampMinutes(Number(minutesInput.value)) }
-      const trip = centerTrip(picked, before.minutes)
-      applyTrip(trip)
-      void runTrip(trip, false, picked).then((ok) => {
-        if (!ok) applyTrip(before)
+      const before = shown
+      const next = groupShown(picked, clampMinutes(Number(minutesInput.value)))
+      applyShown(next)
+      void runTrip(next, false, picked).then((ok) => {
+        if (!ok) applyShown(before)
       })
     })
   })
@@ -518,12 +635,22 @@ function wireAreas() {
   })
 }
 
+function paintTogether() {
+  for (const chip of areaChips.querySelectorAll<HTMLButtonElement>("button")) {
+    chip.setAttribute("aria-pressed", togetherPicks.has(chip.dataset.area ?? "") ? "true" : "false")
+  }
+  const count = togetherPicks.size
+  areaTogether.disabled = count < 2
+  areaTogether.textContent =
+    count < 2 ? "Pick two or more" : count === AREAS.length ? "Show all together" : `Show ${count} together`
+}
+
 /**
  * Show the area picker. On a first visit it is locked (no Close, no backdrop
- * dismiss) and the curtain card steps aside. Resolves with the chosen area, or
- * null when dismissed.
+ * dismiss) and the curtain card steps aside. Resolves with the chosen areas
+ * (one, or several to view together), or null when dismissed.
  */
-function pickArea(locked: boolean): Promise<Area | null> {
+function pickArea(locked: boolean): Promise<Area[] | null> {
   closeAreaPicker(null, true)
   pickLocked = locked
   areaPicker.hidden = false
@@ -531,19 +658,28 @@ function pickArea(locked: boolean): Promise<Area | null> {
   areaClose.hidden = locked
   curtain.classList.toggle("is-picking", locked)
   areaOpen.setAttribute("aria-expanded", "true")
+  const single = areas.length === 1 ? areas[0] : undefined
   const buttons = [...areaList.querySelectorAll<HTMLButtonElement>("button")]
   for (const button of buttons) {
-    if (!locked && button.dataset.area === area.id) button.setAttribute("aria-current", "true")
+    if (!locked && single && button.dataset.area === single.id) button.setAttribute("aria-current", "true")
     else button.removeAttribute("aria-current")
   }
-  const current = buttons.find((button) => button.dataset.area === area.id) ?? buttons[0]
-  current?.focus()
+  togetherPicks = new Set((areas.length > 1 ? areas : AREAS).map((item) => item.id))
+  paintTogether()
+  if (!locked && areas.length > 1) {
+    areaTogether.setAttribute("aria-current", "true")
+    areaTogether.focus()
+  } else {
+    areaTogether.removeAttribute("aria-current")
+    const current = buttons.find((button) => button.dataset.area === single?.id) ?? buttons[0]
+    current?.focus()
+  }
   return new Promise((resolve) => {
     pickResolve = resolve
   })
 }
 
-function closeAreaPicker(picked: Area | null, force = false) {
+function closeAreaPicker(picked: Area[] | null, force = false) {
   const resolve = pickResolve
   if (!resolve) return
   if (!picked && pickLocked && !force) return

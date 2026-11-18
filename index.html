@@ -126,8 +126,13 @@
         <section class="area-card" role="dialog" aria-modal="true" aria-labelledby="area-title">
           <p class="eyebrow">Boston Home Search</p>
           <h2 id="area-title">Where does the drive start?</h2>
-          <p class="area-sub">Streets and home listings are timed from the place you pick. You can switch any time.</p>
+          <p class="area-sub">Streets and home listings are timed from the place you pick, or from the closest of several. You can switch any time.</p>
           <ul id="area-list" class="area-list"></ul>
+          <div class="area-together" role="group" aria-labelledby="area-together-title">
+            <p class="area-together-title" id="area-together-title">Or view them together</p>
+            <div id="area-chips" class="area-chips"></div>
+            <button type="button" id="area-together">Show all together</button>
+          </div>
           <button type="button" id="area-close">Close</button>
         </section>
       </div>

@@ -24,7 +24,8 @@ export type Listing = {
   lastSeen: string
 }
 
-export type ListingView = Listing & { isNew: boolean }
+/** `origin` names the area driveMin is measured from (the nearest one when areas are combined). */
+export type ListingView = Listing & { isNew: boolean; origin?: string; originShort?: string }
 
 export const LISTINGS_URL = "/data/listings.json"
 const NEW_WINDOW_MS = 24 * 60 * 60 * 1000
@@ -48,6 +49,37 @@ export async function loadListingViews(url = LISTINGS_URL, now = Date.now()): Pr
     .map((listing) => ({ ...listing, isNew: isNewListing(listing.firstSeen, now) }))
     .sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
   return { listings, updatedAt: file.generatedAt ?? newestLastSeen(listings) }
+}
+
+/**
+ * Load several area files and keep each home once, with its shortest drive and
+ * the area that drive is from. A file that fails to load is skipped.
+ */
+export async function loadMergedListings(
+  sources: Array<{ url: string; origin: string; originShort: string }>,
+  now = Date.now(),
+): Promise<LoadedListings> {
+  const loaded = await Promise.all(
+    sources.map((source) =>
+      loadListingViews(source.url, now)
+        .then((file) => ({ file, source }))
+        .catch(() => null),
+    ),
+  )
+  const best = new Map<string, ListingView>()
+  let updatedAt: string | null = null
+  for (const item of loaded) {
+    if (!item) continue
+    const { file, source } = item
+    if (file.updatedAt && (!updatedAt || Date.parse(file.updatedAt) > Date.parse(updatedAt))) updatedAt = file.updatedAt
+    for (const listing of file.listings) {
+      const current = best.get(listing.id)
+      if (current && current.driveMin <= listing.driveMin) continue
+      best.set(listing.id, { ...listing, origin: source.origin, originShort: source.originShort })
+    }
+  }
+  const listings = [...best.values()].sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
+  return { listings, updatedAt }
 }
 
 function unwrapListings(data: unknown): { rows: unknown[]; generatedAt: string | null } {

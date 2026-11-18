@@ -81,3 +81,41 @@ export function metersFrom(area: Pick<Area, "lon" | "lat">, lon: number, lat: nu
 export function areaAt(lon: number, lat: number): Area | null {
   return AREAS.find((area) => metersFrom(area, lon, lat) < 80) ?? null
 }
+
+/** First word of the area name ("Kendall", "Needham", "Wellesley"). */
+export function areaShort(area: Area): string {
+  return area.name.split(" ")[0] ?? area.name
+}
+
+/**
+ * Areas from a comma-separated id list ("kendall,needham"), in AREAS order,
+ * without repeats. Null when nothing in it is a known area.
+ */
+export function parseAreas(value: string | null | undefined): Area[] | null {
+  if (!value) return null
+  const ids = new Set(value.split(",").map((part) => part.trim()))
+  const list = AREAS.filter((area) => ids.has(area.id))
+  return list.length > 0 ? list : null
+}
+
+export function areaIds(list: readonly Area[]): string {
+  return list.map((area) => area.id).join(",")
+}
+
+export function sameAreas(a: readonly Area[], b: readonly Area[]): boolean {
+  return a.length === b.length && a.every((area, index) => area.id === b[index]?.id)
+}
+
+/** Label for several areas shown together ("Kendall + Needham", "All three areas"). */
+export function groupName(list: readonly Area[]): string {
+  if (list.length === 1 && list[0]) return list[0].name
+  if (list.length === AREAS.length) return AREAS.length === 3 ? "All three areas" : `All ${AREAS.length} areas`
+  return list.map(areaShort).join(" + ")
+}
+
+/** "Kendall School, Needham Center, and Wellesley Square" */
+export function listPhrase(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? ""
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`
+}
