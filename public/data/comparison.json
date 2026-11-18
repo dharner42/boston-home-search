@@ -1,0 +1,51 @@
+{
+  "departAt": "2026-11-24T08:00",
+  "origin": "The Kendall School, 577 Belmont Street, Belmont, MA",
+  "profile": "mapbox/driving-traffic",
+  "model": {
+    "surface": 1.3,
+    "secondary": 1.1700000000000002,
+    "primary": 3.4,
+    "highway": 2.7,
+    "signal": 4
+  },
+  "maeMinutes": 1.5,
+  "rows": [
+    {
+      "place": "Harvard Square",
+      "freeFlowMinutes": 6.5,
+      "mapboxTuesday8amMinutes": 19.8,
+      "thisMapMinutes": 17.5
+    },
+    {
+      "place": "Arlington Center",
+      "freeFlowMinutes": 7.1,
+      "mapboxTuesday8amMinutes": 16.1,
+      "thisMapMinutes": 15.9
+    },
+    {
+      "place": "Waltham Common",
+      "freeFlowMinutes": 6.4,
+      "mapboxTuesday8amMinutes": 11.9,
+      "thisMapMinutes": 14.4
+    },
+    {
+      "place": "Lexington Center",
+      "freeFlowMinutes": 13.1,
+      "mapboxTuesday8amMinutes": 22,
+      "thisMapMinutes": 27.5
+    },
+    {
+      "place": "Boston Common",
+      "freeFlowMinutes": 13.4,
+      "mapboxTuesday8amMinutes": 30,
+      "thisMapMinutes": 33.3
+    },
+    {
+      "place": "Cambridge Kendall Square",
+      "freeFlowMinutes": 11.4,
+      "mapboxTuesday8amMinutes": 31.6,
+      "thisMapMinutes": 27.7
+    }
+  ]
+}

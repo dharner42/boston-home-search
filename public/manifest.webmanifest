@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Boston Home Search",
   "short_name": "Home Search",
-  "description": "Drive times from The Kendall School in Belmont, for a family house hunt around Boston.",
+  "description": "Tuesday-morning drive times around Boston, from any address.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

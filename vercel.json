@@ -23,8 +23,14 @@
       ]
     },
     {
-      "source": "/data/(streets.bin|streets.geojson|streets-15-20.geojson|travel-grid.json|meta.json|method.json)",
+      "source": "/data/(reach.bin|streets.bin|streets.geojson|streets-15-20.geojson|travel-grid.json|meta.json|method.json|comparison.json)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
     }
-  ]
+  ],
+  "functions": {
+    "api/reach.ts": {
+      "includeFiles": "server/graph.bin",
+      "maxDuration": 30
+    }
+  }
 }

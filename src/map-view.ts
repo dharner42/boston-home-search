@@ -1,19 +1,18 @@
 import maplibregl from "maplibre-gl"
-import type { StreetCollection } from "./load-streets.ts"
-import type { BBox, Camera, Meta } from "./types.ts"
+import { createFuseLayer } from "./fuse-layer.ts"
+import type { ListingFeatureCollection } from "./listings.ts"
+import type { ReachLine } from "./reach/codec.ts"
+import type { ReachBand } from "./reach/model.ts"
+import type { BBox, Camera } from "./types.ts"
 
-const STYLE_URLS = [
+const FALLBACK_STYLES = [
   "https://tiles.openfreemap.org/styles/dark",
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
 ]
 
 const HOLD_WIDE_MS = 700
-const FLY_MS = 2900
-const HOLD_CLOSE_MS = 650
-const SPREAD_MS = 7000
-const VISUAL_SECONDS = 900
-const LIGHT_POWER = 1.28
-const REVEAL_STEP = 15
+const FLY_MS = 2800
+const HOLD_CLOSE_MS = 620
 
 export type FrameName = "start" | "mid" | "end"
 
@@ -22,120 +21,84 @@ export type MapUi = {
   state: "playing" | "ready" | "posed"
 }
 
+export type ReachView = {
+  label: string
+  detail: string
+  lon: number
+  lat: number
+  minutes: number
+  note: string
+  bands: ReachBand[]
+  bounds: { b1: BBox; b2: BBox; b3: BBox }
+  lines: ReachLine[]
+}
+
 export type MapHandle = {
   play: () => void
   skip: () => void
   replay: () => void
   pose: (frame: FrameName) => void
+  show: (view: ReachView) => void
+  setListings: (data: ListingFeatureCollection) => void
 }
 
-type Frames = {
-  wide: Camera
-  close: Camera
-  k5: Camera
-  k10: Camera
-  k15: Camera
-}
+type Frames = { wide: Camera; close: Camera; k1: Camera; k2: Camera; k3: Camera }
 
-export async function mountMap(
-  container: HTMLElement,
-  meta: Meta,
-  meshPromise: Promise<StreetCollection>,
-  onUi: (ui: MapUi) => void,
-): Promise<MapHandle> {
-  const style = await loadStyle()
+export async function mountMap(container: HTMLElement, onUi: (ui: MapUi) => void): Promise<MapHandle> {
   const compact = window.matchMedia("(max-width: 760px), (max-height: 520px)").matches
   const map = new maplibregl.Map({
     container,
-    style,
-    center: [meta.school.lon, meta.school.lat],
-    zoom: compact ? 8.9 : 9.4,
-    minZoom: 8,
+    style: await loadStyle(),
+    center: [-71.1764, 42.3798],
+    zoom: compact ? 9.2 : 9.6,
+    minZoom: 3,
     maxZoom: 18,
     attributionControl: false,
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
     fadeDuration: 0,
+    validateStyle: false,
   })
-  map.addControl(new maplibregl.AttributionControl({ compact }), "bottom-right")
-  map.getCanvas().setAttribute(
-    "aria-label",
-    "Streets colored by drive time from The Kendall School in Belmont",
-  )
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right")
+  const markerEl = buildMarker("Kendall School", "577 Belmont Street")
+  const marker = new maplibregl.Marker({ element: markerEl, anchor: "center" }).setLngLat([-71.1764, 42.3798]).addTo(map)
+  await Promise.race([
+    once(map, "load"),
+    wait(25000).then(() => Promise.reject(new Error("The basemap took too long"))),
+  ])
+  const fuse = createFuseLayer(map)
+  const before = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id
+  map.addLayer(fuse, before)
 
-  const markerEl = buildMarker(meta)
-  markerEl.setAttribute("role", "img")
-  markerEl.setAttribute("aria-label", `${meta.school.shortName}, ${meta.school.street}`)
-  new maplibregl.Marker({ element: markerEl, anchor: "center" })
-    .setLngLat([meta.school.lon, meta.school.lat])
-    .addTo(map)
-
-  await once(map, "load")
-  addRoadLayers(map, meta)
-  let streetsReady = false
-  let shownThrough = -REVEAL_STEP
-  let litSeconds = -1
-  void meshPromise.then((collection) => {
-    const source = map.getSource("roads") as maplibregl.GeoJSONSource | undefined
-    source?.setData(collection)
-    streetsReady = true
-    shownThrough = -REVEAL_STEP
-    setLight(litSeconds)
-    map.triggerRepaint()
-  })
-  const frames = buildFrames(map, meta, compact)
-  let latest = frames.wide
+  let view: ReachView | null = null
+  let frames: Frames | null = null
+  let latest: Camera = { lng: -71.1, lat: 42.37, zoom: 9.4, pitch: 0, bearing: 0 }
   let token = 0
   let raf = 0
   let gestures: AbortController | null = null
 
-  const setMarker = (on: boolean) => markerEl.classList.toggle("is-on", on)
-
-  const setLight = (seconds: number) => {
-    litSeconds = seconds
-    const reveal = seconds < 0 ? -REVEAL_STEP : Math.floor(seconds / REVEAL_STEP) * REVEAL_STEP
+  const clock = (seconds: number) => {
+    if (!view) return
+    const b1 = view.bands[1]?.minSec ?? 300
+    const b2 = view.bands[2]?.minSec ?? 600
+    fuse.setClock(seconds, b1, b2)
     paintLegend(seconds)
-    if (!streetsReady || reveal === shownThrough) return
-    const from = reveal < shownThrough ? 0 : shownThrough + REVEAL_STEP
-    if (reveal < shownThrough) {
-      for (let bucket = 0; bucket < VISUAL_SECONDS; bucket += REVEAL_STEP) {
-        map.setLayoutProperty(`roads-glow-${bucket}`, "visibility", "none")
-        map.setLayoutProperty(`roads-${bucket}`, "visibility", "none")
-      }
-    }
-    for (let bucket = Math.max(0, from); bucket <= reveal && bucket < VISUAL_SECONDS; bucket += REVEAL_STEP) {
-      map.setLayoutProperty(`roads-glow-${bucket}`, "visibility", "visible")
-      map.setLayoutProperty(`roads-${bucket}`, "visibility", "visible")
-    }
-    shownThrough = reveal
+    map.triggerRepaint()
   }
 
   const apply = (camera: Camera, seconds: number, markerOn: boolean) => {
-    const moved = !sameCamera(latest, camera) || raf === 0
+    const moved = !sameCamera(latest, camera)
     latest = camera
     if (moved) {
-      map.jumpTo({
-        center: [camera.lng, camera.lat],
-        zoom: camera.zoom,
-        pitch: camera.pitch,
-        bearing: camera.bearing,
-      })
+      map.jumpTo({ center: [camera.lng, camera.lat], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing })
     }
-    setLight(seconds)
-    setMarker(markerOn)
-    if (!moved) map.triggerRepaint()
+    clock(seconds)
+    markerEl.classList.toggle("is-on", markerOn)
   }
 
   const setInteractive = (on: boolean) => {
-    const handlers = [
-      map.dragPan,
-      map.scrollZoom,
-      map.boxZoom,
-      map.doubleClickZoom,
-      map.keyboard,
-      map.touchZoomRotate,
-    ]
+    const handlers = [map.dragPan, map.scrollZoom, map.boxZoom, map.doubleClickZoom, map.keyboard, map.touchZoomRotate]
     for (const handler of handlers) {
       if (on) handler.enable()
       else handler.disable()
@@ -145,72 +108,59 @@ export async function mountMap(
     if (on) map.touchZoomRotate.disableRotation()
   }
 
-  const stopGestures = () => {
+  const finish = () => {
     gestures?.abort()
     gestures = null
-  }
-
-  const finish = () => {
-    stopGestures()
-    apply(frames.k15, VISUAL_SECONDS, true)
+    if (view && frames) apply(frames.k3, view.minutes * 60, true)
     setInteractive(true)
     onUi({ label: "Replay", state: "ready" })
   }
 
-  const releaseAtCurrentView = () => {
-    token += 1
-    cancel()
-    stopGestures()
-    setLight(VISUAL_SECONDS)
-    setMarker(true)
-    map.triggerRepaint()
-    setInteractive(true)
-    onUi({ label: "Replay", state: "ready" })
-  }
-
-  const listenForTouch = (my: number) => {
-    stopGestures()
+  const listen = (my: number) => {
+    gestures?.abort()
     gestures = new AbortController()
-    const signal = gestures.signal
     const stop = (event: Event) => {
       if (my !== token) return
-      if (event.target instanceof Element && event.target.closest("#action, .brand, .legend")) return
-      releaseAtCurrentView()
+      if (event.target instanceof Element && event.target.closest("#action, .brand, .legend, .status")) return
+      token += 1
+      if (raf) cancelAnimationFrame(raf)
+      raf = 0
+      gestures?.abort()
+      if (view) clock(view.minutes * 60)
+      markerEl.classList.add("is-on")
+      setInteractive(true)
+      onUi({ label: "Replay", state: "ready" })
     }
     const surface = map.getCanvasContainer()
-    surface.addEventListener("pointerdown", stop, { capture: true, signal })
-    surface.addEventListener("wheel", stop, { capture: true, passive: true, signal })
-  }
-
-  const cancel = () => {
-    if (raf) cancelAnimationFrame(raf)
-    raf = 0
+    surface.addEventListener("pointerdown", stop, { capture: true, signal: gestures.signal })
+    surface.addEventListener("wheel", stop, { capture: true, passive: true, signal: gestures.signal })
   }
 
   const play = (existing?: number) => {
+    if (!view || !frames) return
     const my = existing ?? ++token
-    cancel()
+    if (raf) cancelAnimationFrame(raf)
     setInteractive(false)
     onUi({ label: "Skip", state: "playing" })
-    listenForTouch(my)
+    listen(my)
+    const active = frames
+    const minutes = view.minutes
+    const spread = 6200 + minutes * 140
     let started = performance.now()
     const step = (now: number) => {
-      if (my !== token) return
+      if (my !== token || !view) return
       const elapsed = now - started
       const flyEnd = HOLD_WIDE_MS + FLY_MS
       const holdEnd = flyEnd + HOLD_CLOSE_MS
-      const total = holdEnd + SPREAD_MS
-      if (elapsed < HOLD_WIDE_MS) {
-        apply(frames.wide, -1, false)
-      } else if (elapsed < flyEnd) {
+      const total = holdEnd + spread
+      if (elapsed < HOLD_WIDE_MS) apply(active.wide, -1, false)
+      else if (elapsed < flyEnd) {
         const p = smoothstep((elapsed - HOLD_WIDE_MS) / FLY_MS)
-        apply(lerpCam(frames.wide, frames.close, p), -1, false)
-      } else if (elapsed < holdEnd || !streetsReady) {
-        if (!streetsReady && elapsed >= holdEnd) started = now - holdEnd
-        apply(frames.close, -1, true)
-      } else if (elapsed < total) {
-        const p = (elapsed - holdEnd) / SPREAD_MS
-        apply(spreadCamera(frames, p), lightSeconds(p), true)
+        apply(lerpCam(active.wide, active.close, p), -1, false)
+      } else if (elapsed < holdEnd) apply(active.close, -1, true)
+      else if (elapsed < total) {
+        const p = (elapsed - holdEnd) / spread
+        apply(spreadCamera(active, p), minutes * 60 * lightFraction(p), true)
       } else {
         finish()
         return
@@ -224,21 +174,24 @@ export async function mountMap(
     play: () => play(),
     skip: () => {
       token += 1
-      cancel()
+      if (raf) cancelAnimationFrame(raf)
+      raf = 0
       finish()
     },
     replay: () => {
+      if (!frames) return
       const my = ++token
-      cancel()
+      if (raf) cancelAnimationFrame(raf)
       setInteractive(false)
       onUi({ label: "Skip", state: "playing" })
-      listenForTouch(my)
+      listen(my)
       const from = latest
+      const active = frames
       const started = performance.now()
       const step = (now: number) => {
         if (my !== token) return
         const p = Math.min(1, (now - started) / 480)
-        apply(lerpCam(from, frames.wide, smoothstep(p)), -1, false)
+        apply(lerpCam(from, active.wide, smoothstep(p)), -1, false)
         if (p < 1) raf = requestAnimationFrame(step)
         else play(my)
       }
@@ -246,8 +199,10 @@ export async function mountMap(
     },
     pose: (frame) => {
       token += 1
-      cancel()
-      stopGestures()
+      if (raf) cancelAnimationFrame(raf)
+      raf = 0
+      gestures?.abort()
+      if (!view || !frames) return
       if (frame === "start") {
         apply(frames.wide, -1, false)
         setInteractive(false)
@@ -255,7 +210,7 @@ export async function mountMap(
         return
       }
       if (frame === "mid") {
-        apply(spreadCamera(frames, 0.5), lightSeconds(0.5), true)
+        apply(spreadCamera(frames, 0.5), view.minutes * 60 * lightFraction(0.5), true)
         setInteractive(false)
         onUi({ label: "Skip", state: "posed" })
         return
@@ -263,86 +218,129 @@ export async function mountMap(
       finish()
       onUi({ label: "Replay", state: "posed" })
     },
+    show: (next) => {
+      view = next
+      fuse.setLines(next.lines)
+      frames = buildFrames(map, next, compact)
+      latest = frames.wide
+      marker.setLngLat([next.lon, next.lat])
+      const title = markerEl.querySelector<HTMLElement>(".school-card strong")
+      const detail = markerEl.querySelector<HTMLElement>(".school-card span")
+      if (title) title.textContent = shortName(next.label)
+      if (detail) detail.textContent = next.detail
+      markerEl.setAttribute("aria-label", next.label)
+      map.getCanvas().setAttribute("aria-label", `Streets colored by drive time from ${next.label}`)
+      renderLegend(next)
+      apply(frames.wide, -1, false)
+    },
+    setListings: (data) => {
+      const existing = map.getSource("listings") as maplibregl.GeoJSONSource | undefined
+      if (existing) {
+        existing.setData(data)
+        return
+      }
+      if (data.features.length === 0) return
+      map.addSource("listings", { type: "geojson", data })
+      map.addLayer({
+        id: "listings",
+        type: "circle",
+        source: "listings",
+        paint: {
+          "circle-color": ["match", ["get", "type"], "rent", "#FFC857", "sale", "#7EB6FF", "#ffffff"],
+          "circle-radius": 6,
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "#0b0e13",
+        },
+      })
+      const font = symbolFont(map)
+      if (!font) return
+      map.addLayer({
+        id: "listing-labels",
+        type: "symbol",
+        source: "listings",
+        layout: {
+          "text-field": ["concat", ["get", "driveLabel"], " · ", ["get", "priceLabel"]],
+          "text-font": font,
+          "text-size": 11,
+          "text-offset": [0, 1.15],
+          "text-anchor": "top",
+        },
+        paint: {
+          "text-color": "#f4efe4",
+          "text-halo-color": "#0b0e13",
+          "text-halo-width": 1.2,
+        },
+      })
+    },
   }
 
-  apply(frames.wide, -1, false)
   setInteractive(false)
   window.addEventListener("resize", () => map.resize())
-  await Promise.race([once(map, "idle"), wait(1400)])
+  await Promise.race([once(map, "idle"), wait(1600)])
   return api
 }
 
 function spreadCamera(frames: Frames, p: number): Camera {
   const stops = [
     { at: 0, camera: frames.close },
-    { at: 0.34, camera: frames.k5 },
-    { at: 0.67, camera: frames.k10 },
-    { at: 1, camera: frames.k15 },
+    { at: 0.34, camera: frames.k1 },
+    { at: 0.67, camera: frames.k2 },
+    { at: 1, camera: frames.k3 },
   ]
   let index = 0
-  while (index < stops.length - 2 && p > stops[index + 1].at) index += 1
-  const left = stops[index]
-  const right = stops[index + 1]
-  const local = (p - left.at) / (right.at - left.at)
+  while (index < stops.length - 2 && p > (stops[index + 1]?.at ?? 1)) index += 1
+  const left = stops[index] ?? stops[0]!
+  const right = stops[index + 1] ?? left
+  const local = (p - left.at) / (right.at - left.at || 1)
   return lerpCam(left.camera, right.camera, smoothstep(local))
 }
 
-function lightSeconds(p: number): number {
+function lightFraction(p: number): number {
   const x = Math.min(1, Math.max(0, p))
-  return VISUAL_SECONDS * x ** LIGHT_POWER
+  return x ** 1.12
 }
 
-function buildFrames(map: maplibregl.Map, meta: Meta, compact: boolean): Frames {
+function buildFrames(map: maplibregl.Map, view: ReachView, compact: boolean): Frames {
   const short = window.innerHeight < 520
   const padding = short
     ? { top: 72, bottom: 88, left: 16, right: 16 }
     : compact
-      ? { top: 96, bottom: 158, left: 16, right: 16 }
-      : { top: 108, bottom: 150, left: 28, right: 32 }
-  const wide: Camera = compact
-    ? { lng: -71.06, lat: 42.363, zoom: 8.85, pitch: 0, bearing: 0 }
-    : { lng: -71.075, lat: 42.37, zoom: 9.35, pitch: 0, bearing: 0 }
+      ? { top: 128, bottom: 150, left: 16, right: 16 }
+      : { top: 120, bottom: 150, left: 28, right: 32 }
   const close: Camera = {
-    lng: meta.school.lon,
-    lat: meta.school.lat,
-    zoom: compact ? 14.35 : 15.1,
-    pitch: compact ? 18 : 34,
-    bearing: -14,
+    lng: view.lon,
+    lat: view.lat,
+    zoom: compact ? 14.2 : 15,
+    pitch: compact ? 16 : 32,
+    bearing: -12,
   }
-  const k5 = fitBounds(map, meta.bounds["5"], padding)
-  const k10 = fitBounds(map, meta.bounds["10"], padding)
-  const k15 = fitBounds(map, meta.bounds["15"], padding)
-  k5.zoom = Math.min(k5.zoom, close.zoom - 0.25)
-  k10.zoom = Math.min(k10.zoom, k5.zoom - 0.3)
-  k15.zoom = Math.min(k15.zoom, k10.zoom - 0.2)
-  k5.pitch = compact ? 5 : 10
-  k5.bearing = -6
-  k10.pitch = 0
-  k10.bearing = 0
-  k15.pitch = 0
-  k15.bearing = 0
-  return { wide, close, k5, k10, k15 }
+  const k1 = fitBounds(map, view.bounds.b1, padding, close)
+  const k2 = fitBounds(map, view.bounds.b2, padding, k1)
+  const k3 = fitBounds(map, view.bounds.b3, padding, k2)
+  k1.zoom = Math.min(k1.zoom, close.zoom - 0.2)
+  k2.zoom = Math.min(k2.zoom, k1.zoom - 0.25)
+  k3.zoom = Math.min(k3.zoom, k2.zoom - 0.15)
+  const wide: Camera = { ...k3, zoom: Math.max(k3.zoom - 1.15, 8.2), pitch: 0, bearing: 0 }
+  k1.pitch = compact ? 4 : 8
+  k1.bearing = -4
+  k2.pitch = 0
+  k2.bearing = 0
+  k3.pitch = 0
+  k3.bearing = 0
+  return { wide, close, k1, k2, k3 }
 }
 
-function fitBounds(map: maplibregl.Map, bounds: BBox, padding: maplibregl.PaddingOptions): Camera {
+function fitBounds(map: maplibregl.Map, bounds: BBox, padding: maplibregl.PaddingOptions, fallback: Camera): Camera {
   const camera = map.cameraForBounds(
     [
       [bounds[0], bounds[1]],
       [bounds[2], bounds[3]],
     ],
-    { padding, bearing: 0, pitch: 0, maxZoom: 14.6 },
+    { padding, bearing: 0, pitch: 0, maxZoom: 14.4 },
   )
-  if (!camera?.center || camera.zoom == null) {
-    throw new Error("Could not frame the drive-time map")
-  }
+  if (!camera?.center || camera.zoom == null) return fallback
   const center = lngLatOf(camera.center)
-  return {
-    lng: center.lng,
-    lat: center.lat,
-    zoom: camera.zoom,
-    pitch: 0,
-    bearing: 0,
-  }
+  return { lng: center.lng, lat: center.lat, zoom: camera.zoom, pitch: 0, bearing: 0 }
 }
 
 function lngLatOf(center: maplibregl.LngLatLike): { lng: number; lat: number } {
@@ -351,93 +349,86 @@ function lngLatOf(center: maplibregl.LngLatLike): { lng: number; lat: number } {
   return { lng: center.lon, lat: center.lat }
 }
 
-function addRoadLayers(map: maplibregl.Map, meta: Meta) {
-  map.addSource("roads", {
-    type: "geojson",
-    data: { type: "FeatureCollection", features: [] },
-  })
-  const before = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id
-  const color = bandColor(meta, "color")
-  const core = bandColor(meta, "core")
-  for (let bucket = 0; bucket < VISUAL_SECONDS; bucket += REVEAL_STEP) {
-    const filter: maplibregl.FilterSpecification = [
-      "all",
-      [">=", ["get", "t"], bucket],
-      ["<", ["get", "t"], bucket + REVEAL_STEP],
-    ]
-    map.addLayer(
-      {
-        id: `roads-glow-${bucket}`,
-        type: "line",
-        source: "roads",
-        filter,
-        layout: { visibility: "none", "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": color,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 9, 3.2, 12, 6.5, 14, 10, 16, 15],
-          "line-opacity": 0.55,
-        },
-      },
-      before,
-    )
-    map.addLayer(
-      {
-        id: `roads-${bucket}`,
-        type: "line",
-        source: "roads",
-        filter,
-        layout: { visibility: "none", "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": core,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 12, 1.6, 14, 2.8, 16, 4.6],
-          "line-opacity": 0.95,
-        },
-      },
-      before,
-    )
+function renderLegend(view: ReachView) {
+  const legend = document.querySelector("#legend")
+  if (!legend) return
+  legend.replaceChildren()
+  const kicker = document.createElement("p")
+  kicker.className = "legend-kicker"
+  kicker.textContent = `From ${shortName(view.label)}`
+  const list = document.createElement("ul")
+  for (const band of view.bands) {
+    const item = document.createElement("li")
+    item.dataset.min = String(band.minSec)
+    const swatch = document.createElement("i")
+    swatch.style.background = band.color
+    swatch.style.boxShadow = `0 0 12px ${band.color}`
+    const label = document.createElement("span")
+    label.textContent = band.label
+    item.append(swatch, label)
+    list.append(item)
   }
+  const note = document.createElement("p")
+  note.className = "legend-note"
+  note.textContent = view.note
+  legend.append(kicker, list, note)
 }
 
-function bandColor(meta: Meta, key: "color" | "core"): maplibregl.ExpressionSpecification | string {
-  const first = meta.bands[0]
-  const second = meta.bands[1]
-  const third = meta.bands[2]
-  if (!first || !second || !third) return "#ffffff"
-  return ["match", ["get", "band"], 1, first[key], 2, second[key], 3, third[key], "#ffffff"] as maplibregl.ExpressionSpecification
-}
-
-function paintLegend(reveal: number) {
+function paintLegend(seconds: number) {
   document.querySelectorAll<HTMLLIElement>("#legend li").forEach((item) => {
-    const band = Number(item.dataset.band)
-    const minSec = band === 1 ? 0 : band === 2 ? 300 : 600
-    item.classList.toggle("is-lit", reveal >= minSec)
+    item.classList.toggle("is-lit", seconds >= Number(item.dataset.min ?? 0))
   })
 }
 
-function buildMarker(meta: Meta): HTMLDivElement {
+function buildMarker(title: string, detail: string): HTMLDivElement {
   const el = document.createElement("div")
   el.className = "school-marker"
+  el.setAttribute("role", "img")
+  el.setAttribute("aria-label", title)
   const pin = document.createElement("div")
   pin.className = "pin"
   pin.innerHTML = '<span class="pulse"></span><span class="dot"></span>'
   const card = document.createElement("div")
   card.className = "school-card"
-  const title = document.createElement("strong")
-  title.textContent = meta.school.shortName
-  const street = document.createElement("span")
-  street.textContent = meta.school.street
-  card.append(title, street)
+  const strong = document.createElement("strong")
+  strong.textContent = title
+  const span = document.createElement("span")
+  span.textContent = detail
+  card.append(strong, span)
   el.append(pin, card)
   return el
 }
 
+function shortName(label: string): string {
+  const cut = label.split(",")[0]?.trim() || label
+  return cut.length > 32 ? `${cut.slice(0, 31)}…` : cut
+}
+
+function symbolFont(map: maplibregl.Map): string[] | null {
+  for (const layer of map.getStyle().layers) {
+    if (layer.type !== "symbol" || !layer.layout) continue
+    const font = layer.layout["text-font"]
+    if (!Array.isArray(font)) continue
+    const names: string[] = []
+    for (const item of font) {
+      if (typeof item !== "string") {
+        names.length = 0
+        break
+      }
+      names.push(item)
+    }
+    if (names.length > 0) return names
+  }
+  return null
+}
+
 async function loadStyle(): Promise<maplibregl.StyleSpecification> {
   let last = "The basemap didn't respond."
-  for (const url of STYLE_URLS) {
+  for (const url of FALLBACK_STYLES) {
     try {
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(`${url} returned ${res.status}`)
-      const style = (await res.json()) as StyleDoc
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`${url} returned ${response.status}`)
+      const style = (await response.json()) as StyleDoc
       dimBasemapRoads(style)
       return style as maplibregl.StyleSpecification
     } catch (error) {
@@ -447,27 +438,15 @@ async function loadStyle(): Promise<maplibregl.StyleSpecification> {
   throw new Error(last)
 }
 
-type StyleLayer = {
-  id: string
-  type: string
-  paint?: Record<string, unknown>
-  layout?: Record<string, unknown>
-}
-
-type StyleDoc = {
-  layers: StyleLayer[]
-}
+type StyleLayer = { id: string; type: string; paint?: Record<string, unknown>; layout?: Record<string, unknown> }
+type StyleDoc = { layers: StyleLayer[] }
 
 function dimBasemapRoads(style: StyleDoc) {
-  for (const layer of style.layers) {
-    if (!/highway|road|transport/i.test(layer.id)) continue
-    if (/rail|aeroway|boundary|water|poi/i.test(layer.id)) continue
-    if (/path|oneway|pedestrian|foot|cycle/i.test(layer.id)) {
-      layer.layout = { ...(layer.layout ?? {}), visibility: "none" }
-      continue
-    }
+  for (const layer of style.layers ?? []) {
+    if (!/highway|road|transport|bridge|tunnel/i.test(layer.id)) continue
+    if (/rail|aeroway|boundary|water|poi|label|shield|oneway/i.test(layer.id)) continue
     if (layer.type !== "line") continue
-    layer.paint = { ...(layer.paint ?? {}), "line-opacity": 0.22 }
+    layer.paint = { ...(layer.paint ?? {}), "line-opacity": 0.28 }
   }
 }
 

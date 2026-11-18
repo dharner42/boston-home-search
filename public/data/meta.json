@@ -4,15 +4,15 @@
     "shortName": "Kendall School",
     "address": "577 Belmont Street, Belmont, MA",
     "street": "577 Belmont Street",
-    "lat": 42.379809840920856,
-    "lon": -71.17640130983217,
+    "lat": 42.3798098,
+    "lon": -71.1764013,
     "osmType": "way",
     "osmId": 29580670
   },
   "bands": [
     {
       "band": 1,
-      "label": "0\u20135 min",
+      "label": "0–5 min",
       "minSec": 0,
       "maxSec": 300,
       "color": "#FFC857",
@@ -20,7 +20,7 @@
     },
     {
       "band": 2,
-      "label": "5\u201310 min",
+      "label": "5–10 min",
       "minSec": 300,
       "maxSec": 600,
       "color": "#FF6B3D",
@@ -28,44 +28,33 @@
     },
     {
       "band": 3,
-      "label": "10\u201315 min",
+      "label": "10–15 min",
       "minSec": 600,
       "maxSec": 900,
       "color": "#7EB6FF",
       "core": "#E7F1FF"
     }
   ],
-  "unlit": {
-    "band": 4,
-    "label": "15\u201320 min",
-    "minSec": 900,
-    "maxSec": 1200
-  },
   "bounds": {
     "5": [
-      -71.22338,
-      42.35285,
-      -71.12434,
-      42.40959
+      -71.20126306386204,
+      42.36162867642377,
+      -71.15385276411399,
+      42.39886992562163
     ],
     "10": [
-      -71.28958,
-      42.32036,
-      -71.07926,
-      42.45415
+      -71.23497668384613,
+      42.34924441907203,
+      -71.13438796294705,
+      42.41924686786637
     ],
     "15": [
-      -71.38447,
-      42.28763,
-      -71.0243,
-      42.49921
-    ],
-    "20": [
-      -71.48242,
-      42.23333,
-      -70.99323,
-      42.53694
+      -71.25876871474674,
+      42.331112539600284,
+      -71.10898604629107,
+      42.44210714867546
     ]
   },
-  "note": "Free-flow speeds, not rush hour. Past 15 minutes the roads stay dark."
+  "departAt": "2026-11-24T08:00",
+  "note": "Tuesday morning traffic, about 8:00. Streets past 15 minutes stay dark."
 }
