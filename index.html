@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0e13" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Boston Home Search" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <meta
+      name="description"
+      content="Boston Home Search. Streets within a drive of The Kendall School in Belmont, lighting up from the school."
+    />
+    <title>Boston Home Search</title>
+  </head>
+  <body>
+    <div id="app" data-state="loading">
+      <div id="map" role="region" aria-label="Map"></div>
+      <header class="brand">
+        <p class="eyebrow">Boston Home Search</p>
+        <h1>Kendall</h1>
+        <p class="sub">By car from the school</p>
+      </header>
+      <section id="legend" class="legend" aria-label="Drive time legend"></section>
+      <button type="button" id="action" class="action" hidden>Skip</button>
+      <div id="curtain" role="status">
+        <div class="curtain-card">
+          <p class="eyebrow">Boston Home Search</p>
+          <h1>Kendall</h1>
+          <p id="curtain-status">Charting the drive from school…</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </div>
+      </div>
+      <div id="error" class="error" hidden>
+        <div class="error-card">
+          <h2>The map didn’t load</h2>
+          <p id="error-text"></p>
+          <button type="button" id="retry">Try again</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+{
+  "school": {
+    "name": "The Kendall School",
+    "shortName": "Kendall School",
+    "address": "577 Belmont Street, Belmont, MA",
+    "street": "577 Belmont Street",
+    "lat": 42.379809840920856,
+    "lon": -71.17640130983217,
+    "osmType": "way",
+    "osmId": 29580670
+  },
+  "bands": [
+    {
+      "band": 1,
+      "label": "0\u20135 min",
+      "minSec": 0,
+      "maxSec": 300,
+      "color": "#FFC857",
+      "core": "#FFF3CC"
+    },
+    {
+      "band": 2,
+      "label": "5\u201310 min",
+      "minSec": 300,
+      "maxSec": 600,
+      "color": "#FF6B3D",
+      "core": "#FFD0C4"
+    },
+    {
+      "band": 3,
+      "label": "10\u201315 min",
+      "minSec": 600,
+      "maxSec": 900,
+      "color": "#7EB6FF",
+      "core": "#E7F1FF"
+    }
+  ],
+  "unlit": {
+    "band": 4,
+    "label": "15\u201320 min",
+    "minSec": 900,
+    "maxSec": 1200
+  },
+  "bounds": {
+    "5": [
+      -71.22338,
+      42.35285,
+      -71.12434,
+      42.40959
+    ],
+    "10": [
+      -71.28958,
+      42.32036,
+      -71.07926,
+      42.45415
+    ],
+    "15": [
+      -71.38447,
+      42.28763,
+      -71.0243,
+      42.49921
+    ],
+    "20": [
+      -71.48242,
+      42.23333,
+      -70.99323,
+      42.53694
+    ]
+  },
+  "note": "Free-flow speeds, not rush hour. Past 15 minutes the roads stay dark."
+}
