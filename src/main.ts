@@ -3,7 +3,8 @@ import "@fontsource-variable/outfit"
 import "maplibre-gl/dist/maplibre-gl.css"
 import "./style.css"
 
-import { prepareListingPins } from "./listings.ts"
+import { mountListingUi } from "./listing-ui.ts"
+import { listingsToGeoJSON, loadListingViews } from "./listings.ts"
 import { mountMap, type FrameName, type MapHandle, type ReachView } from "./map-view.ts"
 import { decodeReach, type ReachData } from "./reach/codec.ts"
 import { nextTuesdayMorning } from "./reach/tuesday.ts"
@@ -29,6 +30,10 @@ const go = must(document.querySelector<HTMLButtonElement>("#go"), "go")
 
 retry.addEventListener("click", () => window.location.reload())
 
+const listingUi = mountListingUi({
+  onFilter: (filter) => handle?.setListingFilter(filter),
+  onFocus: (listing) => handle?.focusListing(listing.lng, listing.lat),
+})
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 const frame = frameParam(new URLSearchParams(window.location.search).get("frame"))
 let selected: Place | null = null
@@ -55,6 +60,8 @@ async function boot() {
       action.textContent = ui.label
       app.dataset.state = ui.state
     })
+    handle.onListingClick = (id) => listingUi.open(id)
+    handle.onListingsVisible = (visible) => listingUi.setVisible(visible)
     try {
       await runTrip(trip, true)
     } catch (error) {
@@ -87,8 +94,9 @@ async function runTrip(trip: Place & { minutes: number }, first: boolean) {
     const reach = await loadReach(trip)
     const view = toView(reach, trip)
     handle?.show(view)
-    const pins = await prepareListingPins(reach.grid).catch(() => null)
-    if (pins && pins.features.length > 0) handle?.setListings(pins)
+    const listings = await loadListingViews().catch(() => [])
+    listingUi.setListings(listings)
+    handle?.setListings(listingsToGeoJSON(listings))
     window.clearInterval(timer)
     setStatus("", first)
     if (first) await fadeCurtain()

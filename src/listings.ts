@@ -1,31 +1,33 @@
-import { loadTravelGrid, travelMinutes, type TravelGrid } from "./travel-time.ts"
-
-export type ListingType = "rent" | "sale"
+export type ListingKind = "sale" | "rent"
 
 /**
- * One row of public/data/listings.json.
- * A scheduled job can overwrite that file; this module does not care how it got there.
+ * One row of public/data/listings.json, written by scripts/build-listings.ts.
+ * driveMin is the Tuesday 8:00 drive from The Kendall School, not the map's current origin.
  */
 export type Listing = {
   id: string
-  type: ListingType
-  /** Monthly rent, or sale price, in dollars. */
+  source: "zillow"
+  kind: ListingKind
   price: number
-  lon: number
+  beds: number
+  baths: number | null
+  sqft: number | null
+  type: string
+  address: string
   lat: number
-  address?: string
-  isNew?: boolean
-  url?: string
-  beds?: number
-  baths?: number
+  lng: number
+  url: string
+  img: string
+  broker: string
+  driveMin: number
+  firstSeen: string
+  lastSeen: string
 }
 
-export type AnnotatedListing = Listing & {
-  /** Minutes from the active origin, or null outside the timed grid. */
-  driveMinutes: number | null
-}
+export type ListingView = Listing & { isNew: boolean }
 
 export const LISTINGS_URL = "/data/listings.json"
+const NEW_WINDOW_MS = 24 * 60 * 60 * 1000
 
 export async function loadListings(url = LISTINGS_URL): Promise<Listing[]> {
   const res = await fetch(url)
@@ -33,25 +35,39 @@ export async function loadListings(url = LISTINGS_URL): Promise<Listing[]> {
   if (!res.ok) throw new Error(`Could not load listings (${res.status})`)
   const data: unknown = await res.json()
   if (!Array.isArray(data)) return []
-  return data.filter(isListing)
+  return data.filter(isListing).map(normalizeListing)
 }
 
-export function annotateListings(listings: Listing[], grid: TravelGrid): AnnotatedListing[] {
-  return listings.map((listing) => ({
-    ...listing,
-    driveMinutes: travelMinutes(grid, listing.lon, listing.lat),
-  }))
+export async function loadListingViews(url = LISTINGS_URL, now = Date.now()): Promise<ListingView[]> {
+  const listings = await loadListings(url)
+  return listings
+    .map((listing) => ({ ...listing, isNew: isNewListing(listing.firstSeen, now) }))
+    .sort((a, b) => a.driveMin - b.driveMin || a.id.localeCompare(b.id))
 }
 
-export function formatDrive(minutes: number | null, maxMinutes = 20): string {
-  if (minutes == null || minutes > maxMinutes + 0.05) return `${maxMinutes}+ min`
-  const rounded = minutes < 10 ? Math.round(minutes * 10) / 10 : Math.round(minutes)
-  return `${rounded} min`
+export function isNewListing(firstSeen: string, now = Date.now()): boolean {
+  const seen = Date.parse(firstSeen)
+  if (!Number.isFinite(seen)) return false
+  const age = now - seen
+  return age <= NEW_WINDOW_MS && seen <= now + 5 * 60 * 1000
 }
 
-export function formatPrice(listing: Pick<Listing, "type" | "price">): string {
+export function formatDrive(minutes: number): string {
+  const rounded = Math.round(minutes * 10) / 10
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+  return `${text} min`
+}
+
+export function formatPrice(listing: Pick<Listing, "kind" | "price">): string {
   const amount = Math.round(listing.price).toLocaleString("en-US")
-  return listing.type === "rent" ? `$${amount}/mo` : `$${amount}`
+  return listing.kind === "rent" ? `$${amount}/mo` : `$${amount}`
+}
+
+export function formatFacts(listing: Pick<Listing, "beds" | "baths" | "sqft">): string {
+  const parts = [`${formatCount(listing.beds)} bd`]
+  if (listing.baths != null) parts.push(`${formatCount(listing.baths)} ba`)
+  if (listing.sqft != null) parts.push(`${Math.round(listing.sqft).toLocaleString("en-US")} sqft`)
+  return parts.join(" · ")
 }
 
 export type ListingFeature = {
@@ -59,14 +75,9 @@ export type ListingFeature = {
   geometry: { type: "Point"; coordinates: [number, number] }
   properties: {
     id: string
-    type: ListingType
-    price: number
-    priceLabel: string
-    driveMinutes: number | null
+    kind: ListingKind
     driveLabel: string
     isNew: boolean
-    address: string
-    url: string
   }
 }
 
@@ -75,39 +86,24 @@ export type ListingFeatureCollection = {
   features: ListingFeature[]
 }
 
-export function listingsToGeoJSON(listings: AnnotatedListing[], maxMinutes = 20): ListingFeatureCollection {
+export function listingsToGeoJSON(listings: ListingView[]): ListingFeatureCollection {
   return {
     type: "FeatureCollection",
     features: listings.map((listing) => ({
       type: "Feature",
-      geometry: { type: "Point", coordinates: [listing.lon, listing.lat] },
+      geometry: { type: "Point", coordinates: [listing.lng, listing.lat] },
       properties: {
         id: listing.id,
-        type: listing.type,
-        price: listing.price,
-        priceLabel: formatPrice(listing),
-        driveMinutes: listing.driveMinutes,
-        driveLabel: formatDrive(listing.driveMinutes, maxMinutes),
-        isNew: Boolean(listing.isNew),
-        address: listing.address ?? "",
-        url: listing.url ?? "",
+        kind: listing.kind,
+        driveLabel: formatDrive(listing.driveMin),
+        isNew: listing.isNew,
       },
     })),
   }
 }
 
-/**
- * Load listings.json (404 → empty), join each pin to the active drive grid,
- * and return GeoJSON ready for a MapLibre pin layer.
- *
- * Pass the grid for the current origin. Without one, the baked Kendall grid is used.
- */
-export async function prepareListingPins(
-  grid?: TravelGrid,
-  listingsUrl = LISTINGS_URL,
-): Promise<ListingFeatureCollection> {
-  const [listings, drive] = await Promise.all([loadListings(listingsUrl), grid ? Promise.resolve(grid) : loadTravelGrid()])
-  return listingsToGeoJSON(annotateListings(listings, drive), drive.maxMinutes)
+function formatCount(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10)
 }
 
 function isListing(value: unknown): value is Listing {
@@ -115,10 +111,41 @@ function isListing(value: unknown): value is Listing {
   const row = value as Partial<Listing>
   return (
     typeof row.id === "string" &&
-    (row.type === "rent" || row.type === "sale") &&
+    row.id.length > 0 &&
+    row.source === "zillow" &&
+    (row.kind === "sale" || row.kind === "rent") &&
     typeof row.price === "number" &&
     Number.isFinite(row.price) &&
-    typeof row.lon === "number" &&
-    typeof row.lat === "number"
+    typeof row.beds === "number" &&
+    Number.isFinite(row.beds) &&
+    typeof row.lat === "number" &&
+    Number.isFinite(row.lat) &&
+    typeof row.lng === "number" &&
+    Number.isFinite(row.lng) &&
+    typeof row.driveMin === "number" &&
+    Number.isFinite(row.driveMin) &&
+    typeof row.firstSeen === "string"
   )
+}
+
+function normalizeListing(row: Listing): Listing {
+  return {
+    id: row.id,
+    source: "zillow",
+    kind: row.kind,
+    price: row.price,
+    beds: row.beds,
+    baths: typeof row.baths === "number" && Number.isFinite(row.baths) ? row.baths : null,
+    sqft: typeof row.sqft === "number" && Number.isFinite(row.sqft) ? row.sqft : null,
+    type: typeof row.type === "string" ? row.type : "",
+    address: typeof row.address === "string" ? row.address : "",
+    lat: row.lat,
+    lng: row.lng,
+    url: typeof row.url === "string" ? row.url : "",
+    img: typeof row.img === "string" ? row.img : "",
+    broker: typeof row.broker === "string" ? row.broker : "",
+    driveMin: row.driveMin,
+    firstSeen: row.firstSeen,
+    lastSeen: typeof row.lastSeen === "string" ? row.lastSeen : row.firstSeen,
+  }
 }

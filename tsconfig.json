@@ -16,5 +16,5 @@
     "noFallthroughCasesInSwitch": true,
     "strict": true
   },
-  "include": ["src", "api"]
+  "include": ["src", "api", "scripts/build-listings.ts"]
 }
