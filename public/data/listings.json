@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T00:25:45.831Z",
+  "generatedAt": "2026-11-20T11:23:09.285Z",
   "listings": [
     {
       "id": "463740312",
@@ -18,7 +18,7 @@
       "broker": "",
       "driveMin": 1.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56373653",
@@ -37,7 +37,7 @@
       "broker": "",
       "driveMin": 2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56407837",
@@ -56,7 +56,7 @@
       "broker": "",
       "driveMin": 3.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463528081",
@@ -75,7 +75,7 @@
       "broker": "",
       "driveMin": 4.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463406102",
@@ -94,7 +94,7 @@
       "broker": "",
       "driveMin": 5.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56408743",
@@ -113,7 +113,7 @@
       "broker": "",
       "driveMin": 5.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466539827",
@@ -132,7 +132,7 @@
       "broker": "",
       "driveMin": 5.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56405812",
@@ -151,13 +151,13 @@
       "broker": "",
       "driveMin": 6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56374897",
       "source": "zillow",
       "kind": "rent",
-      "price": 4350,
+      "price": 4150,
       "beds": 4,
       "baths": 2,
       "sqft": 1400,
@@ -170,7 +170,7 @@
       "broker": "",
       "driveMin": 6.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "464207342",
@@ -189,7 +189,7 @@
       "broker": "",
       "driveMin": 6.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56375630",
@@ -208,7 +208,7 @@
       "broker": "",
       "driveMin": 6.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56372381",
@@ -227,7 +227,7 @@
       "broker": "Zoom Realty, Inc.",
       "driveMin": 7.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56411293",
@@ -246,7 +246,7 @@
       "broker": "Berkshire Hathaway HomeServices Commonwealth Real Estate",
       "driveMin": 7.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56375053",
@@ -265,7 +265,7 @@
       "broker": "City Realty Group",
       "driveMin": 8.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56365701",
@@ -284,7 +284,7 @@
       "broker": "",
       "driveMin": 8.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56365719",
@@ -303,7 +303,26 @@
       "broker": "",
       "driveMin": 8.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
+    },
+    {
+      "id": "56365726",
+      "source": "zillow",
+      "kind": "sale",
+      "price": 849900,
+      "beds": 5,
+      "baths": 2,
+      "sqft": 1766,
+      "type": "SINGLE_FAMILY",
+      "address": "34 Barbara Rd, Waltham, MA 02453",
+      "lat": 42.376225,
+      "lng": -71.21089,
+      "url": "https://www.zillow.com/homedetails/34-Barbara-Rd-Waltham-MA-02453/56365726_zpid/",
+      "img": "https://photos.zillowstatic.com/fp/d83bea3ba419f9105ff2dd9ef4711c99-p_e.jpg",
+      "broker": "Unlock Real Estate",
+      "driveMin": 8.4,
+      "firstSeen": "2026-11-20T11:23:09.285Z",
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "165939392",
@@ -322,7 +341,7 @@
       "broker": "",
       "driveMin": 8.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56363200",
@@ -341,7 +360,7 @@
       "broker": "Keller Williams Realty Boston Northwest",
       "driveMin": 8.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466429914",
@@ -360,7 +379,7 @@
       "broker": "Keller Williams Realty Boston-Metro | Back Bay",
       "driveMin": 9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56302703",
@@ -379,7 +398,7 @@
       "broker": "Commonwealth Standard Realty Advisors",
       "driveMin": 9.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463740197",
@@ -398,7 +417,7 @@
       "broker": "",
       "driveMin": 9.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "456311587",
@@ -417,7 +436,7 @@
       "broker": "",
       "driveMin": 9.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "446931084",
@@ -436,7 +455,7 @@
       "broker": "Compass",
       "driveMin": 9.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463990483",
@@ -455,7 +474,7 @@
       "broker": "",
       "driveMin": 9.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56365259",
@@ -474,7 +493,7 @@
       "broker": "Coldwell Banker Realty - Newton",
       "driveMin": 10.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2102864803",
@@ -493,7 +512,7 @@
       "broker": "",
       "driveMin": 10.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56403665",
@@ -512,7 +531,7 @@
       "broker": "Leading Edge Real Estate",
       "driveMin": 10.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56394404",
@@ -531,7 +550,7 @@
       "broker": "Lamacchia Realty, Inc.",
       "driveMin": 11,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2082464288",
@@ -550,7 +569,7 @@
       "broker": "",
       "driveMin": 11.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "333580695",
@@ -569,7 +588,7 @@
       "broker": "",
       "driveMin": 11.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "71497131",
@@ -588,7 +607,7 @@
       "broker": "",
       "driveMin": 11.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "239893367",
@@ -607,7 +626,7 @@
       "broker": "",
       "driveMin": 11.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2098753546",
@@ -626,7 +645,7 @@
       "broker": "",
       "driveMin": 11.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2118850251",
@@ -645,7 +664,7 @@
       "broker": "",
       "driveMin": 11.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56365374",
@@ -664,7 +683,7 @@
       "broker": "eXp Realty LLC",
       "driveMin": 12.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56361490",
@@ -683,7 +702,7 @@
       "broker": "Berkshire Hathaway HomeServices Commonwealth Real Estate",
       "driveMin": 12.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56438959",
@@ -702,7 +721,7 @@
       "broker": "",
       "driveMin": 12.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "465997070",
@@ -721,7 +740,7 @@
       "broker": "William Raveis R.E. & Home Services",
       "driveMin": 12.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087112",
@@ -740,7 +759,7 @@
       "broker": "",
       "driveMin": 12.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087744",
@@ -759,7 +778,7 @@
       "broker": "homecoin.com",
       "driveMin": 13,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56357875",
@@ -778,7 +797,7 @@
       "broker": "RE/MAX Encore",
       "driveMin": 13.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2055448575",
@@ -797,7 +816,7 @@
       "broker": "",
       "driveMin": 13.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463844726",
@@ -816,7 +835,7 @@
       "broker": "",
       "driveMin": 13.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2066424948",
@@ -835,7 +854,7 @@
       "broker": "",
       "driveMin": 13.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56357880",
@@ -854,7 +873,7 @@
       "broker": "Coldwell Banker Realty - Waltham",
       "driveMin": 13.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56535202",
@@ -873,7 +892,7 @@
       "broker": "Denkar Realty Group",
       "driveMin": 13.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56364639",
@@ -892,7 +911,7 @@
       "broker": "",
       "driveMin": 13.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59090319",
@@ -911,7 +930,7 @@
       "broker": "",
       "driveMin": 13.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2052840669",
@@ -930,7 +949,7 @@
       "broker": "",
       "driveMin": 13.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56303457",
@@ -949,7 +968,7 @@
       "broker": "",
       "driveMin": 13.8,
       "firstSeen": "2026-11-19T00:25:45.831Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56360417",
@@ -968,7 +987,7 @@
       "broker": "",
       "driveMin": 13.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "446550817",
@@ -987,26 +1006,7 @@
       "broker": "",
       "driveMin": 14.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
-    },
-    {
-      "id": "59090747",
-      "source": "zillow",
-      "kind": "rent",
-      "price": 5500,
-      "beds": 5,
-      "baths": 3,
-      "sqft": 2202,
-      "type": "SINGLE_FAMILY",
-      "address": "3 Murdock Ter, Brighton, MA 02135",
-      "lat": 42.352276,
-      "lng": -71.14638,
-      "url": "https://www.zillow.com/homedetails/3-Murdock-Ter-Brighton-MA-02135/59090747_zpid/",
-      "img": "https://photos.zillowstatic.com/fp/cc9b6ba8a4aaebd3254ddf3cd81456cd-p_e.jpg",
-      "broker": "",
-      "driveMin": 14.1,
-      "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463055311",
@@ -1025,7 +1025,7 @@
       "broker": "",
       "driveMin": 14.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2092927215",
@@ -1044,7 +1044,7 @@
       "broker": "",
       "driveMin": 14.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2106674732",
@@ -1063,7 +1063,7 @@
       "broker": "",
       "driveMin": 14.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2115574129",
@@ -1082,15 +1082,15 @@
       "broker": "",
       "driveMin": 14.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56305034",
       "source": "zillow",
       "kind": "rent",
       "price": 5000,
-      "beds": 6,
-      "baths": 4,
+      "beds": 5,
+      "baths": 3,
       "sqft": 2500,
       "type": "SINGLE_FAMILY",
       "address": "732 Watertown St, Newton, MA 02460",
@@ -1101,7 +1101,7 @@
       "broker": "",
       "driveMin": 14.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59086887",
@@ -1120,7 +1120,7 @@
       "broker": "CUE Realty",
       "driveMin": 14.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087857",
@@ -1139,7 +1139,7 @@
       "broker": "",
       "driveMin": 14.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "464749204",
@@ -1158,7 +1158,7 @@
       "broker": "Boston and Cambridge Homes LLC",
       "driveMin": 14.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56307004",
@@ -1177,7 +1177,7 @@
       "broker": "",
       "driveMin": 14.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2096037037",
@@ -1196,7 +1196,7 @@
       "broker": "",
       "driveMin": 14.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087341",
@@ -1215,7 +1215,7 @@
       "broker": "",
       "driveMin": 14.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "81378977",
@@ -1234,7 +1234,7 @@
       "broker": "",
       "driveMin": 14.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56534947",
@@ -1253,7 +1253,7 @@
       "broker": "Keller Williams Realty",
       "driveMin": 14.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56305026",
@@ -1272,7 +1272,7 @@
       "broker": "",
       "driveMin": 15,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2070006472",
@@ -1291,7 +1291,7 @@
       "broker": "",
       "driveMin": 15.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56308389",
@@ -1310,7 +1310,7 @@
       "broker": "",
       "driveMin": 15.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56361181",
@@ -1329,7 +1329,7 @@
       "broker": "Citylife Real Estate",
       "driveMin": 15.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "450199837",
@@ -1348,7 +1348,7 @@
       "broker": "Goodwin Realty Group, LLC",
       "driveMin": 15.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466389280",
@@ -1367,7 +1367,7 @@
       "broker": "Kurt Jackson",
       "driveMin": 15.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56397770",
@@ -1386,7 +1386,7 @@
       "broker": "Prime Realty",
       "driveMin": 15.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59088687",
@@ -1405,7 +1405,7 @@
       "broker": "",
       "driveMin": 15.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56436921",
@@ -1424,7 +1424,7 @@
       "broker": "",
       "driveMin": 15.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2121180191",
@@ -1443,7 +1443,7 @@
       "broker": "V & E Realty",
       "driveMin": 16,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56306416",
@@ -1462,7 +1462,7 @@
       "broker": "",
       "driveMin": 16,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2082757787",
@@ -1481,7 +1481,7 @@
       "broker": "",
       "driveMin": 16.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "461556067",
@@ -1500,7 +1500,7 @@
       "broker": "",
       "driveMin": 16.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56357282",
@@ -1519,7 +1519,7 @@
       "broker": "Coldwell Banker Realty - Waltham",
       "driveMin": 16.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087072",
@@ -1538,7 +1538,7 @@
       "broker": "",
       "driveMin": 16.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087074",
@@ -1557,7 +1557,7 @@
       "broker": "",
       "driveMin": 16.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2062612951",
@@ -1576,7 +1576,7 @@
       "broker": "",
       "driveMin": 16.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "464247059",
@@ -1595,7 +1595,7 @@
       "broker": "",
       "driveMin": 16.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56540159",
@@ -1614,26 +1614,7 @@
       "broker": "Coldwell Banker Realty - Belmont",
       "driveMin": 16.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
-    },
-    {
-      "id": "56540703",
-      "source": "zillow",
-      "kind": "rent",
-      "price": 7000,
-      "beds": 7,
-      "baths": 4,
-      "sqft": 3000,
-      "type": "SINGLE_FAMILY",
-      "address": "118 Ash St, Waltham, MA 02453",
-      "lat": 42.36589,
-      "lng": -71.23746,
-      "url": "https://www.zillow.com/homedetails/118-Ash-St-Waltham-MA-02453/56540703_zpid/",
-      "img": "https://photos.zillowstatic.com/fp/2498fbf4d62dbf3bf851fee4d41aaa5b-p_e.jpg",
-      "broker": "",
-      "driveMin": 16.6,
-      "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59096452",
@@ -1652,7 +1633,7 @@
       "broker": "",
       "driveMin": 16.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2086169017",
@@ -1671,7 +1652,7 @@
       "broker": "",
       "driveMin": 16.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2101685931",
@@ -1690,7 +1671,7 @@
       "broker": "",
       "driveMin": 16.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2080487761",
@@ -1709,7 +1690,7 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2100034024",
@@ -1728,7 +1709,7 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2118353745",
@@ -1747,7 +1728,7 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2121984255",
@@ -1766,7 +1747,7 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087058",
@@ -1785,7 +1766,7 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087061",
@@ -1804,13 +1785,13 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087291",
       "source": "zillow",
       "kind": "rent",
-      "price": 7500,
+      "price": 7000,
       "beds": 6,
       "baths": 3,
       "sqft": null,
@@ -1819,11 +1800,11 @@
       "lat": 42.355015,
       "lng": -71.127525,
       "url": "https://www.zillow.com/homedetails/47-Pratt-St-Allston-MA-02134/59087291_zpid/",
-      "img": "https://photos.zillowstatic.com/fp/7a0a267deb939e0a813ae6ce38e87a89-p_e.jpg",
+      "img": "https://photos.zillowstatic.com/fp/2ea827b316a55b258ea9fc56b5f535bd-p_e.jpg",
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-19T00:25:45.831Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59213491",
@@ -1842,7 +1823,7 @@
       "broker": "",
       "driveMin": 16.8,
       "firstSeen": "2026-11-19T00:25:45.831Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "465175248",
@@ -1861,7 +1842,7 @@
       "broker": "",
       "driveMin": 16.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59086120",
@@ -1880,7 +1861,7 @@
       "broker": "",
       "driveMin": 16.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "465793400",
@@ -1899,7 +1880,7 @@
       "broker": "",
       "driveMin": 17,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59095919",
@@ -1918,7 +1899,7 @@
       "broker": "",
       "driveMin": 17,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2120588229",
@@ -1937,7 +1918,7 @@
       "broker": "",
       "driveMin": 17.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2127279762",
@@ -1956,7 +1937,7 @@
       "broker": "",
       "driveMin": 17.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466529366",
@@ -1975,7 +1956,7 @@
       "broker": "",
       "driveMin": 17.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466663720",
@@ -1994,26 +1975,7 @@
       "broker": "",
       "driveMin": 17.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
-    },
-    {
-      "id": "59087049",
-      "source": "zillow",
-      "kind": "rent",
-      "price": 7500,
-      "beds": 5,
-      "baths": 2,
-      "sqft": 2500,
-      "type": "SINGLE_FAMILY",
-      "address": "22 Wadsworth St, Allston, MA 02134",
-      "lat": 42.35514,
-      "lng": -71.12568,
-      "url": "https://www.zillow.com/homedetails/22-Wadsworth-St-Allston-MA-02134/59087049_zpid/",
-      "img": "https://photos.zillowstatic.com/fp/86d9d7bb481db8742652302472e1779d-p_e.jpg",
-      "broker": "",
-      "driveMin": 17.2,
-      "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087050",
@@ -2032,7 +1994,7 @@
       "broker": "",
       "driveMin": 17.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "339506840",
@@ -2051,7 +2013,7 @@
       "broker": "Engel & Volkers Wellesley",
       "driveMin": 17.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56366271",
@@ -2070,7 +2032,7 @@
       "broker": "",
       "driveMin": 17.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087046",
@@ -2089,7 +2051,7 @@
       "broker": "",
       "driveMin": 17.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59088402",
@@ -2108,7 +2070,7 @@
       "broker": "",
       "driveMin": 17.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59095294",
@@ -2127,7 +2089,7 @@
       "broker": "",
       "driveMin": 17.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "446494474",
@@ -2146,7 +2108,7 @@
       "broker": "",
       "driveMin": 17.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56359984",
@@ -2165,7 +2127,7 @@
       "broker": "RE/MAX Platinum",
       "driveMin": 17.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56357339",
@@ -2184,7 +2146,7 @@
       "broker": "William Raveis R.E. & Home Services",
       "driveMin": 17.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56400548",
@@ -2203,7 +2165,7 @@
       "broker": "",
       "driveMin": 17.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466559493",
@@ -2222,7 +2184,7 @@
       "broker": "",
       "driveMin": 17.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56320056",
@@ -2241,7 +2203,7 @@
       "broker": "",
       "driveMin": 17.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59087037",
@@ -2260,7 +2222,7 @@
       "broker": "",
       "driveMin": 17.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2059774677",
@@ -2279,7 +2241,7 @@
       "broker": "",
       "driveMin": 18,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2102916492",
@@ -2298,7 +2260,7 @@
       "broker": "",
       "driveMin": 18,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2103244506",
@@ -2317,7 +2279,7 @@
       "broker": "",
       "driveMin": 18,
       "firstSeen": "2026-11-19T00:25:45.831Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463758791",
@@ -2336,7 +2298,7 @@
       "broker": "",
       "driveMin": 18,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2090757055",
@@ -2355,7 +2317,7 @@
       "broker": "",
       "driveMin": 18.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "59088537",
@@ -2374,7 +2336,7 @@
       "broker": "",
       "driveMin": 18.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "463987115",
@@ -2393,7 +2355,7 @@
       "broker": "",
       "driveMin": 18.2,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56491120",
@@ -2412,7 +2374,7 @@
       "broker": "Coldwell Banker Realty - Lexington",
       "driveMin": 18.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2084705125",
@@ -2431,7 +2393,7 @@
       "broker": "",
       "driveMin": 18.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56536875",
@@ -2450,7 +2412,7 @@
       "broker": "",
       "driveMin": 18.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2069802232",
@@ -2469,7 +2431,7 @@
       "broker": "",
       "driveMin": 18.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466111392",
@@ -2488,7 +2450,7 @@
       "broker": "",
       "driveMin": 18.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2103156414",
@@ -2507,7 +2469,7 @@
       "broker": "",
       "driveMin": 18.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "454236336",
@@ -2526,7 +2488,7 @@
       "broker": "",
       "driveMin": 18.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56488691",
@@ -2545,7 +2507,7 @@
       "broker": "",
       "driveMin": 18.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2062661516",
@@ -2564,7 +2526,7 @@
       "broker": "",
       "driveMin": 19,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466041724",
@@ -2583,7 +2545,7 @@
       "broker": "Coldwell Banker Realty - Belmont",
       "driveMin": 19,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466489413",
@@ -2602,7 +2564,7 @@
       "broker": "",
       "driveMin": 19,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56317315",
@@ -2621,7 +2583,7 @@
       "broker": "",
       "driveMin": 19,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "462066781",
@@ -2640,7 +2602,7 @@
       "broker": "",
       "driveMin": 19.1,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2092399726",
@@ -2659,7 +2621,7 @@
       "broker": "",
       "driveMin": 19.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2101197956",
@@ -2678,7 +2640,7 @@
       "broker": "",
       "driveMin": 19.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2110107842",
@@ -2697,7 +2659,7 @@
       "broker": "",
       "driveMin": 19.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2111315141",
@@ -2716,7 +2678,7 @@
       "broker": "",
       "driveMin": 19.3,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56311360",
@@ -2735,26 +2697,7 @@
       "broker": "",
       "driveMin": 19.3,
       "firstSeen": "2026-11-19T00:25:45.831Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
-    },
-    {
-      "id": "2062002310",
-      "source": "zillow",
-      "kind": "rent",
-      "price": 5695,
-      "beds": 4,
-      "baths": 2,
-      "sqft": null,
-      "type": "TOWNHOUSE",
-      "address": "45 Packard Ave #1A, Somerville, MA 02144",
-      "lat": 42.40369,
-      "lng": -71.123695,
-      "url": "https://www.zillow.com/homedetails/45-Packard-Ave-1A-Somerville-MA-02144/2062002310_zpid/",
-      "img": "https://photos.zillowstatic.com/fp/4cd156635d57175d7823dcbf032c8dad-p_e.jpg",
-      "broker": "",
-      "driveMin": 19.4,
-      "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "446529223",
@@ -2773,7 +2716,7 @@
       "broker": "",
       "driveMin": 19.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "455319614",
@@ -2792,7 +2735,7 @@
       "broker": "",
       "driveMin": 19.4,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "464165026",
@@ -2811,7 +2754,7 @@
       "broker": "",
       "driveMin": 19.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "465005151",
@@ -2830,7 +2773,7 @@
       "broker": "",
       "driveMin": 19.5,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2056029395",
@@ -2849,7 +2792,7 @@
       "broker": "",
       "driveMin": 19.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "462416763",
@@ -2868,7 +2811,7 @@
       "broker": "",
       "driveMin": 19.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56563525",
@@ -2887,7 +2830,7 @@
       "broker": "",
       "driveMin": 19.6,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2067974139",
@@ -2906,7 +2849,7 @@
       "broker": "",
       "driveMin": 19.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2091640100",
@@ -2925,7 +2868,7 @@
       "broker": "",
       "driveMin": 19.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2111512783",
@@ -2944,7 +2887,7 @@
       "broker": "",
       "driveMin": 19.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56358299",
@@ -2963,7 +2906,7 @@
       "broker": "Vylla Home",
       "driveMin": 19.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56569923",
@@ -2982,7 +2925,7 @@
       "broker": "",
       "driveMin": 19.7,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2088522957",
@@ -3001,7 +2944,7 @@
       "broker": "",
       "driveMin": 19.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2100191667",
@@ -3020,7 +2963,7 @@
       "broker": "",
       "driveMin": 19.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466110897",
@@ -3039,7 +2982,7 @@
       "broker": "",
       "driveMin": 19.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466125055",
@@ -3058,7 +3001,7 @@
       "broker": "",
       "driveMin": 19.8,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2071123640",
@@ -3077,7 +3020,7 @@
       "broker": "",
       "driveMin": 19.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "466238791",
@@ -3096,7 +3039,7 @@
       "broker": "",
       "driveMin": 19.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56280981",
@@ -3115,7 +3058,7 @@
       "broker": "",
       "driveMin": 19.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "56363597",
@@ -3134,7 +3077,7 @@
       "broker": "",
       "driveMin": 19.9,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     },
     {
       "id": "2061491681",
@@ -3153,7 +3096,7 @@
       "broker": "",
       "driveMin": 20,
       "firstSeen": "2026-11-18T05:43:25.326Z",
-      "lastSeen": "2026-11-19T00:25:45.831Z"
+      "lastSeen": "2026-11-20T11:23:09.285Z"
     }
   ]
 }
